@@ -1,0 +1,47 @@
+\documentclass[12pt,a4paper,openright,twoside]{report}
+\usepackage[italian,english]{babel}
+\usepackage{fancyhdr}
+\usepackage{indentfirst}
+\usepackage{newlfont}
+\usepackage{pdfpages}
+\usepackage{abstract}
+\oddsidemargin=30pt \evensidemargin=20pt
+\pagestyle{fancy}\addtolength{\headwidth}{20pt}\setlength{\headheight}{15pt}
+\renewcommand{\chaptermark}[1]{\markboth{\thechapter.\ #1}{}}
+\renewcommand{\sectionmark}[1]{\markright{\thesection \ #1}{}}
+\rhead[\fancyplain{}{\bfseries\leftmark}]{\fancyplain{}{\bfseries\thepage}}
+\cfoot{}
+\linespread{1.3}
+\begin{document}
+\includepdf[pages=-]{titlepage.pdf}
+\clearpage{\pagestyle{empty}\cleardoublepage}
+\begin{titlepage}
+\thispagestyle{empty}
+\topmargin=6.5cm
+\raggedleft
+\large
+\em
+dedica
+\newpage
+\clearpage{\pagestyle{empty}\cleardoublepage}
+\end{titlepage}
+\begin{abstract}
+blablabla
+\end{abstract}
+\clearpage{\pagestyle{empty}\cleardoublepage}
+\tableofcontents
+\clearpage{\pagestyle{empty}\cleardoublepage}
+\chapter{Introduction}
+\lhead[\fancyplain{}{\bfseries\thepage}]{\fancyplain{}{\bfseries\rightmark}}
+\pagenumbering{arabic}
+asd
+\chapter{Chapter two}
+\lhead[\fancyplain{}{\bfseries\thepage}]{\fancyplain{}{\bfseries\rightmark}}
+\begin{thebibliography}{99}
+\addcontentsline{toc}{chapter}{Bibliography}
+\bibitem{K1} Primo oggetto bibliografia.
+\bibitem{K2} Secondo oggetto bibliografia.
+\bibitem{K3} Terzo oggetto bibliografia.
+\bibitem{K4} Quarto oggetto bibliografia.
+\end{thebibliography}
+\end{document}
