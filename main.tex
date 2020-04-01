@@ -21,12 +21,23 @@
 \raggedleft
 \large
 \em
-dedica
+Agli amici di sempre,\linebreak
+alla mia famiglia,\linebreak
+che non mi ha mai impedito nulla,\linebreak
+e a Jas,\linebreak
+senza la quale non sarei qui oggi.
 \newpage
 \clearpage{\pagestyle{empty}\cleardoublepage}
 \end{titlepage}
 \begin{abstract}
-blablabla
+One of the most effective way to learn something new is by actively practicing it, and there is---maybe---no better way to study an Operating Systems course than by building your own OS.
+It is also true that the realization of an operating system capable of running on a real hardware machine could be an overly complex and unsuitable task for an undergraduated student.
+Nonetheless, it is possibile to use simplified computer system simulators in order to achieve the goal of teaching Computer Science foundations in the university environment, thus allowing students to experience a quite realistic rappresentation of an operating system.
+$\mu$MPS \cite{umps} has been created for this purpose, a pedagogically appropriate machine emulator, based aroud the MIPS R2/3000 microprocessor, which features an accessible architecture that includes a rich set of easily programmable devices.
+$\mu$MPS has an almost two decades old historical development and the outcome of the following thesis is the third version of the software, dubbed $\mu$MPS3.
+This second major revision aims to semplify even more the emulator's complexity in order to lighten the load of work required by the students during the OS design and implementation.
+Two of these semplifications are the removal of the virtual memory bit, which allowed address translation to be turned on and off, and the replacement of the tape device with a new flash drive device---certainly something more familiar to the new generation of students.
+Other major improvements which concern everything from the project building tools to the front-end were made, enabling the upgrade of $\mu$MPS to a modern reliable educational software.
 \end{abstract}
 \clearpage{\pagestyle{empty}\cleardoublepage}
 \tableofcontents
@@ -43,15 +54,19 @@ blablabla
 \lhead[\fancyplain{}{\bfseries\thepage}]{\fancyplain{}{\bfseries\rightmark}}
 \chapter{Flash Device}
 \lhead[\fancyplain{}{\bfseries\thepage}]{\fancyplain{}{\bfseries\rightmark}}
-\chapter{Qt5 migration}
+\chapter{Project rebase}
+\section{CMake}
+\section{Qt5}
 \lhead[\fancyplain{}{\bfseries\thepage}]{\fancyplain{}{\bfseries\rightmark}}
 \chapter{Debian packaging}
 \lhead[\fancyplain{}{\bfseries\thepage}]{\fancyplain{}{\bfseries\rightmark}}
 \begin{thebibliography}{99}
 \addcontentsline{toc}{chapter}{Bibliography}
-\bibitem{K1} Primo oggetto bibliografia.
-\bibitem{K2} Secondo oggetto bibliografia.
-\bibitem{K3} Terzo oggetto bibliografia.
-\bibitem{K4} Quarto oggetto bibliografia.
+\bibitem{umps}
+  M. Goldweber, R. Davoli, and M. Morsiani,
+  \textit{The Kaya OS project and the $\mu$MPS hardware emulator},
+   SIGCSE Bull.,
+   vol. 37, pp. 49–53,
+   June 2005.
 \end{thebibliography}
 \end{document}
