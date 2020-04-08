@@ -16,28 +16,25 @@
 \includepdf[pages=-]{titlepage.pdf}
 \clearpage{\pagestyle{empty}\cleardoublepage}
 \begin{titlepage}
-\thispagestyle{empty}
-\topmargin=6.5cm
-\raggedleft
-\large
-\em
-Agli amici di sempre,\linebreak
-alla mia famiglia,\linebreak
-che non mi ha mai impedito nulla,\linebreak
-e a Jas,\linebreak
-senza la quale non sarei qui oggi.
-\newpage
-\clearpage{\pagestyle{empty}\cleardoublepage}
+	\thispagestyle{empty}
+	\topmargin=6.5cm
+	\raggedleft
+	\large
+	\em
+	dedica
+	
+	\newpage
+	\clearpage{\pagestyle{empty}\cleardoublepage}
 \end{titlepage}
 \begin{abstract}
-One of the most effective way to learn something new is by actively practicing it, and there is---maybe---no better way to study an Operating Systems course than by building your own OS.
-It is also true that the realization of an operating system capable of running on a real hardware machine could be an overly complex and unsuitable task for an undergraduated student.
-Nonetheless, it is possibile to use simplified computer system simulators in order to achieve the goal of teaching Computer Science foundations in the university environment, thus allowing students to experience a quite realistic rappresentation of an operating system.
-$\mu$MPS \cite{umps} has been created for this purpose, a pedagogically appropriate machine emulator, based aroud the MIPS R2/3000 microprocessor, which features an accessible architecture that includes a rich set of easily programmable devices.
-$\mu$MPS has an almost two decades old historical development and the outcome of the following thesis is the third version of the software, dubbed $\mu$MPS3.
-This second major revision aims to semplify even more the emulator's complexity in order to lighten the load of work required by the students during the OS design and implementation.
-Two of these semplifications are the removal of the virtual memory bit, which allowed address translation to be turned on and off, and the replacement of the tape device with a new flash drive device---certainly something more familiar to the new generation of students.
-Other major improvements which concern everything from the project building tools to the front-end were made, enabling the upgrade of $\mu$MPS to a modern reliable educational software.
+	One of the most effective ways to learn something new is by actively practising it, and there is---maybe---no better way to study an Operating Systems course than by building your OS.
+	However, it is important to emphasize how the realization of an operating system capable of running on a real hardware machine could be an overly complex and unsuitable task for an undergraduate student.
+	Nonetheless, it is possible to use a simplified computer system simulator to achieve the goal of teaching Computer Science foundations in the university environment, thus allowing students to experience a quite realistic representation of an operating system.
+	$\mu$MPS has been created for this purpose, a pedagogically appropriate machine emulator, based around the MIPS R2/3000 microprocessor, which features an accessible architecture that includes a rich set of easily programmable devices.
+	$\mu$MPS has an almost two decades old historical development and the outcome of this following thesis is the third version of the software, dubbed $\mu$MPS3.
+	This second major revision aims to simplify even more the emulator’s complexity to lighten the load of work required by the students during the OS design and implementation.
+	Two of these simplifications are the removal of the virtual memory bit, which allowed address translation to be turned on and off, and the replacement of the tape device, used as storage devices, with a new flash drive device---certainly something more familiar to the new generation of students.
+	Thanks to the employment of this software and the feed-backs received over the last decade it has been possible to realize not just this following thesis but also to develop some major improvements which concern everything from the project building tools to the front-end, making $\mu$MPS a modern and reliable educational software.
 \end{abstract}
 \clearpage{\pagestyle{empty}\cleardoublepage}
 \tableofcontents
@@ -47,19 +44,44 @@ Other major improvements which concern everything from the project building tool
 \pagenumbering{arabic}
 \chapter{Introduction}
 \lhead[\fancyplain{}{\bfseries\thepage}]{\fancyplain{}{\bfseries\rightmark}}
+
 \section{Background}
-The study and the design of how an operating system works is a long established practice in every Computer Science's curriculum.
-The approach on practical contexts is crucial to fully understand how a machine works behind the theoretical notions studied in the early stages of the course of study, and it is usually followed by the decision of which processor architecture is the best teaching choice.
-Obviously, there is not only one approach of how the software can interface with the hardware, and while older implementation---although applicable for educational purposes---are now obsolete and incompatible with current platforms, modern ones are designed with high quality and speed in mind, which makes them overly complex and unsuitable for pedagogic experience.
-The MIPS architecture became one of the landmarks in this choice over the years due to its clean and elegant instruction set, despite being excessively convoluted to student’s perception because of the level of details obscuring the basic underlying feature of it.
-A potential solution to the problem is the adoption of simplified computer system simulators like $\mu$MPS, in order to bring together an adeguate level of understanding and a realistic rappresentation of an operating system.
+	The study and the consequent implementation of how an operating system works is by now a long-established and consolidated practice in every Computer Science's curriculum.
+	It is, actually, one of the crucial components of a computer and it is responsible of ensuring it's basic operations, by coordinating and managing the system's resources like processor, memory, devices and processes, thus allowing hardware and software to interface each other.
+	This is probably the first real example of "big project" which students must experience, thanks to complex intercommunication system that has to exist between the different machine's components, and which the study allows to comprehend the most common software engineering practices.
+	The approach on practical contexts is essential to fully understand how a machine works behind the theoretical notions studied in the early stages of the course of study, and it is usually followed by the debate of which is the best teaching choice concerning processor architectures.
+	Obviously, there is not only one way of how a central processor unit can be implemented, and while older realizations---although applicable for educational purposes---are now obsolete and incompatible with current platforms, modern ones are designed to achieve high speed and quality, which makes them overly complex and unsuitable for the pedagogic experience.
+	The MIPS architecture has become one of the landmarks in this teaching choice over the years due to its clean and elegant instruction set, despite being excessively convoluted to student’s perception because of the high level of details obscuring the basic underlying features of it.
+	A potential solution to this problem is the adoption of a simplified computer system simulator like $\mu$MPS, to bring together an adequate level of understanding and a realistic representation of a real operating system.
+
 \section{History of $\mu$MPS}
+	$\mu$MPS is based on the machine emulator MPS \cite{mps}, designed and realized by Professor Renzo Davoli and one of his graduate students Mauro Morsiani in the late 1990s at the University of Bologna.
+	The initial purpose was to bring back to life the layout and implementation experience of an operating system through an educational emulator which could be run on real hardware.
+	This practice was already possible in the past years when the processor's architecture studied were the same available on real machines, and it has gone lost through the years because of the high-speed development of new more complex technologies used on physical implementations.
+	MPS was able to emulate the MIPS R3000 processor along with five other different device categories: disks, tapes, network adapters, printers and terminals.
+	The concerned CPU was genuinely emulated together with its complex virtual memory management system, which was the main subject of the feed-backs received during class testing of MPS as a pedagogical tool at the University of Bologna and Xavier University in an undergraduate operating systems courses taught respectively by Renzo Davoli and Michael Goldweber.
+	The urge of simplification led to the creation of $\mu$MPS \cite{umps}, virtually identical to MPS but with the addition of a virtual memory management subsystem which had resemble as much as possible to the conceptual one found in popular introductory OS texts.
+	The only other difference was the new novice-friendly graphical user interface, significantly improved again in 2011 by Tomislav Jonjic during the development of the first major revision of the emulator, $\mu$MPS2 \cite{umps2}, which also implemented the support to up to sixteen MIPS R3000-style processors.
+
 \section{$\mu$MPS3}
+
 \section{Document's Structure}
 \chapter{Memory Management}
 \lhead[\fancyplain{}{\bfseries\thepage}]{\fancyplain{}{\bfseries\rightmark}}
+	As for the two prior versions, the memory subsystem of $\mu$MPS3 is divided into physical and virtual, and both have undergone significant changes in this major revision.
+	The main reasons for the modifications made are the further simplification of the work required by the user for the kernel implementation and the better clarification of the emulator's memory internal view which caused some confusion during the more than 10 years of use of $\mu$MPS as an educational tool in operating system courses.
 
-\section{Primary Design}
+\section{Physical Memory}
+	The physical address space is divided into two big areas: a kernel reserved space, from address \texttt{0x0000.0000} to \texttt{0x1FFF.FFFF}, and the installed RAM, from address \texttt{0x2000.0000} to \texttt{RAMTOP}.
+	This last value is calculated upon the value retrieved from the configuration file, settable from the machine config dialog in the front-end emulator, which goes from a minimum of 8 to a maximum of 512 memory frames.
+	Being the size of every frame 4 kilobyte, $\mu$MPS can have from 32KB up top 2MB of installed RAM. Hence, the value of \texttt{RAMTOP} range from \texttt{0x2000.8000} to \texttt{0x2020.0000}.
+
+	The first area was reserved for:
+	\begin{itemize}  
+	\item Execution ROM code, which layed in a read-only segment from address \texttt{0x0000.0000} to \texttt{ROMTOP};
+	\item prova.
+	\end{itemize}
+	This address space, corresponding to the first 0.5GB of physical memory, causes the raising of an Address Error when trying to access it while the processor was in user-mode.
 \section{TLB Floor Address}
 \section{VM Bit Removal}
 \chapter{Exception Handling}
@@ -82,15 +104,26 @@ A potential solution to the problem is the adoption of simplified computer syste
 \section{Arch Linux Package}
 \chapter{Conclusions}
 \lhead[\fancyplain{}{\bfseries\thepage}]{\fancyplain{}{\bfseries\rightmark}}
-Knowing how an operating system works should be common knowledge and not something restricted  only to the ones who studied in the IT field.
-If you are reading this document there are high chances you are doing it on a device of your property, which is running an operating system, and you should know how all of this really works in other to really feel like you own this particular system.
+	Knowing how an operating system works should be common knowledge and not something restricted  only to the ones who studied in the IT field.
+	If you are reading this document there are high chances you are doing it on a device of your property, which is running an operating system, and you should know how all of this really works in other to really feel like you own this particular system.
 \begin{thebibliography}{99}
-\addcontentsline{toc}{chapter}{Bibliography}
-\bibitem{umps}
-  M. Goldweber, R. Davoli, and M. Morsiani,
-  \textit{The Kaya OS project and the $\mu$MPS hardware emulator},
-   SIGCSE Bull.,
-   vol. 37, pp. 49–53,
-   June 2005.
+	\addcontentsline{toc}{chapter}{Bibliography}
+
+	\bibitem{mps}
+	M. Morsiani, R. Davoli,
+	\textit{Learning Operating Systems Structure and Implementation through the MPS Computer System Simulator},
+	University of Bologna, April 1999.
+
+	\bibitem{umps}
+	M. Goldweber, R. Davoli, and M. Morsiani,
+	\textit{The Kaya OS project and the $\mu$MPS hardware emulator},
+	SIGCSE Bull., vol. 37, pp. 49–53, June 2005.
+	
+	\bibitem{umps2}
+	M. Goldweber, R. Davoli, and T. Jonjic,
+	\textit{Supporting operating systems projects using the $\mu$MPS2 hardware simulator},
+	in \textit{Proceedings of the 17th ACM annual conference on Innovation and technology in computer science education},
+	ITiCSE 2012, (New York, NY, USA), pp. 63–68, ACM, 2012.
+
 \end{thebibliography}
 \end{document}
