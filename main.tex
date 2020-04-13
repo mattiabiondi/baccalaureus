@@ -5,6 +5,8 @@
 \usepackage{newlfont}
 \usepackage{pdfpages}
 \usepackage{abstract}
+\usepackage{tabularx}
+\usepackage{colortbl}
 \oddsidemargin=30pt \evensidemargin=20pt
 \pagestyle{fancy}\addtolength{\headwidth}{20pt}\setlength{\headheight}{15pt}
 \renewcommand{\chaptermark}[1]{\markboth{\thechapter.\ #1}{}}
@@ -40,8 +42,15 @@
 	Thanks to the employment of this software and the feed-backs received over the last decade, it has been possible to realize not just this following thesis, but also to develop some major improvements, which concern everything from the project building tools to the front-end, making $\mu$MPS a modern and reliable educational software.
 \end{abstract}
 \clearpage{\pagestyle{empty}\cleardoublepage}
+\selectlanguage{italian}
+\begin{abstract}
+
+\end{abstract}
+\clearpage{\pagestyle{empty}\cleardoublepage}
+\selectlanguage{english}
 \tableofcontents
 \addtocontents{toc}{\protect\thispagestyle{empty}}
+\listoftables
 \thispagestyle{empty}
 \clearpage{\pagestyle{empty}\cleardoublepage}
 \pagenumbering{arabic}
@@ -97,13 +106,15 @@
 \section{Document's Structure}
 \chapter{Memory Management}
 \lhead[\fancyplain{}{\bfseries\thepage}]{\fancyplain{}{\bfseries\rightmark}}
-	As for the two prior versions, the memory subsystem of $\mu$MPS3 is divided into physical and virtual, and both have undergone significant changes in this major revision.
-	The main reasons for the modifications made are the further simplification of the work required by the user for the kernel implementation and the better clarification of the emulator's memory internal view which caused some confusion during the more than 10 years of use of $\mu$MPS as an educational tool in operating system courses.
+	As for the two prior versions, the memory subsystem of $\mu$MPS3, being based on the MIPS 3000 microprocessor, is divided into physical and virtual.
+	Both parts have undergone significant modifications in this major revision, and they will be described in detail in this chapter along with the changes with respect to their old version.
+	The main reasons for the modifications made are the further simplification of the work required by the user for the kernel implementation and the better clarification of the emulator's memory internal view which caused some confusion in the past.
 
 \section{Physical Memory}
 	The physical address space is divided into two big areas: a kernel reserved space, from address \texttt{0x0000.0000} to \texttt{0x1FFF.FFFF}, and the installed RAM, from address \texttt{0x2000.0000} to \texttt{RAMTOP}.
-	This last value is calculated upon the value retrieved from the configuration file, settable from the machine config dialog in the front-end emulator, which goes from a minimum of 8 to a maximum of 512 memory frames.
-	Being the size of every frame 4 kilobyte, $\mu$MPS can have from 32KB up top 2MB of installed RAM. Hence, the value of \texttt{RAMTOP} range from \texttt{0x2000.8000} to \texttt{0x2020.0000}.
+
+	This last value is calculated upon the value retrieved from the configuration file, settable from the machine's configuration dialog in the front-end emulator, which goes from a minimum of 8 to a maximum of 512 memory frames.
+	Being the size of each frame of 4 kilobyte, $\mu$MPS3 can have from 32KB up top 2MB of installed RAM. Hence, the value of \texttt{RAMTOP} range from \texttt{0x2000.8000} to \texttt{0x2020.0000}.
 
 	The first area was reserved for:
 	\begin{itemize}  
@@ -112,16 +123,192 @@
 	\end{itemize}
 	This address space, corresponding to the first 0.5GB of physical memory, causes the raising of an Address Error when trying to access it while the processor was in user-mode.
 \section{TLB Floor Address}
+Come già citato nel cap. 2 (credo, memory), una delle conseguenze dell'implementazione del TLB Floor Adress come ultima parola del Bus Register Area è stato lo shifting (in su) di 1 parola (4 byte) delle due aree successive,Installed Devices Bit Map e Interrupting Devices Bit Map.
+	Un'altra differenza rispetto ad uMPS2 è, dunque, il valore delle costanti da utilizzare durante il calcolo del starting address of a device's device register, che dovranno essere aumentate di una parola rispetto alla versione precedente.
 \section{VM Bit Removal}
 \chapter{Exception Handling}
 \lhead[\fancyplain{}{\bfseries\thepage}]{\fancyplain{}{\bfseries\rightmark}}
 \section{Primary Design}
 \section{BIOS Data area}
 \lhead[\fancyplain{}{\bfseries\thepage}]{\fancyplain{}{\bfseries\rightmark}}
-\chapter{Flash Devices}
+\chapter{Device Interfaces}
 \lhead[\fancyplain{}{\bfseries\thepage}]{\fancyplain{}{\bfseries\rightmark}}
-\section{Tape Readers}
-\section{Flash Drives}
+	Since its first implementation, besides the MIPS R3000 microprocessor, $\mu$MPS has always been able to emulate five different device categories: disks, tapes, network adapters, printers and terminals.
+	Furthermore, it can support up to eight instances of each device type.
+
+	This chapter will provide the reasons why, along with this major revision, one of the devices has been replaced with a new one.
+
+	As for the functioning and implementation of the remaining devices, the reader may refer to the manual \textit{$\mu$MPS2 Principles of Operation} \cite{pops}.
+	
+\section{Tapes}
+	MPS has been conceived and developed in the late '90s, and many updates and improvements have followed to make it as it is nowadays.
+
+	It is simple to imagine how much can technology achieve in over 20 years, and $\mu$MPS' devices are not exempt from this process.
+	Therefore, it may not be a surprise talking about how hard disk drives are, nowadays, less and less used, outclassed by new solid-state drives, despite still being common knowledge.
+
+	Network adapters are still present and properly taught in every IT class, although changed in their appearance, from physical to wireless, and certainly much faster, but the speed of the devices is not what concerns $\mu$MPS, on the contrary, the goal is to teach their functioning.
+
+	Whereas there is not a real reason to think about the replacement of printers and terminals, there is one last device category about which the same cannot be said: tape devices.
+
+	In modern ages, tape devices are only studied in History of computer science's classes, and are no longer found in real implementations if not in rare cases.
+	As a result, only older users still know what tapes are, their functioning and their use, therefore new generations are slowly losing consciousness of what they are or admittedly never heard of them.
+
+	Given all of this, it would have been a misstep not to use them, as when $\mu$MPS2 was released in 2011, technology was going through a transaction, and those who were still students knew of them. However, after almost ten years, the situation has changed, and tapes' final days have come.
+  
+	Tapes, in $\mu$MPS2, were implemented as read-only DMA (Direct Memory Access) devices, capable of transferring 4KB blocks of data per time, concurrently for each installed device of this category.
+	Internally, they were divided into equal sized frames of 4KB each, through the use of four marked codes: \texttt{EOT} (end-of-tape), \texttt{EOF} (end-of-file), \texttt{EOB} (end-of-block), \texttt{TS} (tape-start), to scan the reading process and simulating the movement of a head on a tape.
+
+	In order to let the students work with a storage device slower than disks, but still familiar to them, $\mu$MPS3 had to completely remove tapes to implement a new category of devices: flash drive devices.
+
+\section{Flash Devices}
+	A flash drive device, also know as ``USB sticks'' or ``SD cards'', is a storage device using flash memory, which is a solid-state memory, therefore not implemented through physical disks or tapes, and can be electrically erased and reprogrammed.
+	Unlike disks or tapes, a ``seek'' operation---that moves a head assembly over a physical surface---is not needed before reading from or writing to a specific block or sector.
+
+	In order to reproduce the same experience in $\mu$MPS3, the easiest way is to take a similar implemented device, the disk, remove the ``seek'' operation from it and simplify the coordinates system (cylinder, head, sector) to a single contiguous block addressable space [\texttt{0...MAXBLOCKS-1}].
+
+	Hence, a flash drive device is a readable/writable DMA device, divided into equal-sized frames of the same dimension of $\mu$MPS3's framesize, 4KB, each one accessible via specific block number.
+
+	$\mu$MPS3 uses a 3 byte (24 bit) address space for flash device, consequently, each device in this category can have up to $2^{24}$ (\texttt{0xFFFFFF}) blocks of memory, which is equivalent to a maximum size of 64GB. 
+
+	As already said, a flash drive device is usually slower than a disk device.
+	However, the \texttt{umps3-mkdev} utility, which comes with $\mu$MPS3's installation and allows the user to create a disk or a flash device image, accepts a speed argument for both of them: ``seek time'' for disks and ``write time'' for flash devices. Therefore, this does not prevent anyone to voluntarily create a flash device significantly faster than a disk device.
+
+	The speed related argument is optional, and, if not given, \texttt{umps3-mkdev} will use default values:
+	\begin{verbatim}
+	#define DFLSEEKTIME 100
+	#define DFLWTIME    DFLSEEKTIME * 10
+	\end{verbatim}
+	Like intuitively understable from parameters' name, the first one is for disks' default seek time, while the latter is for flash devices' default write time. This means that, if not voluntarily indicated by the user who creates a device, the flash devices' write time will always be ten times slower the disks' seek time.
+	
+	Flash devices' read time can't be directly defined, but it will be calculated \textit{ad-hoc} when needed by multiplying the device's set write time by: 
+	\begin{verbatim}
+	#define READRATIO   3/4
+	\end{verbatim}
+	This way, the read speed will always be 3/4 of the write speed, because $\to$ \texttt{WAIT FOR PROFS' ANSWER}
+	
+\subsection{Creation}
+	As \texttt{umps2-mkdev} allowed to create tape devices' image files, \texttt{umps3-mkdev} permits to create flash device ones via the following syntax (also visible by running the utility with no arguments):
+	\begin{verbatim}
+	$ umps3-mkdev -f <flashfile>.umps <file> [blocks [wt]]
+	\end{verbatim}
+	where:
+	\begin{itemize}
+	\item	\texttt{-f} : specify that we want to create a flash device image instead o a disk's one (\texttt{-d});
+	\item	\texttt{<flashfile>} : the flash device image file's name that will be created;
+	\item	\texttt{<file>} : existing file to be written into the new flash device image;
+	\item	\texttt{blocks} : number of blocks [\texttt{1...0xFFFFFF}] (default = 512);
+	\item	\texttt{wt} : average write time (in microseconds) [1...100000] (default = 1000);
+	\end{itemize}
+	Going more in detail, after correctly running the previous command, the utility will decode command-line's argument, if existing.
+	
+	Then, it will attempt to open, via a common \texttt{fopen}, the flash device's image file in write-mode.
+	If the operation is successfull, a \texttt{FLASHFILEID} (\texttt{0x0153504D}) will be written into the first word of memory of the file by using an \texttt{fwrite} function.
+	This file recognition tag is used to distinguish this type of file from all the other types of files generated or recognized by $\mu$MPS3.
+	
+	Number of blocks and write speed are also subsequently written, which, along with the \texttt{FLASHFILEID}, compose the \textit{header} of the flash device.
+	These three parameters will be needed by $\mu$MPS3, when interacting with the device, to correctly simulate it.
+	
+	Lastly, after opening it in read-mode by using an \texttt{fread} function, the existing file will be written inside the image file block-by-block.
+	
+	Once the \textit{end-of-file} indicator is reached, in case no errors have occurred, the flash device image file will be successfully created.
+
+\subsection{Usage}
+	The use of a flash device, in $\mu$MPS3, is not significantly different from the use of any other device. As reported on the manual \textit{$\mu$MPS2 Principles of Operation} \cite{pops}:
+	\begin{quote}
+	Each single device is operated by a controller.
+	Controllers exchange information with the processor via device registers; special memory locations.
+	A device register is a consecutive 4-word block of memory.
+	By writing and reading specific fields in a given device register, the processor may both issue commands and test device status and responses.
+	$\mu$MPS3 implements the full-handshake interrupt-driven protocol.
+	Specifically:
+	\begin{enumerate}
+	\item Communication with device \textit{i} is initiated by the writing of a command code into device \textit{i}'s device register.
+	\item Device \textit{i}'s controller responds by both starting the indicated operation and setting a status field in \textit{i}'s device register.
+	\item When the indicated operation completes, device \textit{i}'s controller will again set some fields in \textit{i}'s device register; including the status field.
+	Furthermore, device \textit{i}'s controller will generate an interrupt exception by asserting the appropriate interrupt line.
+	The generated interrupt exception informs the processor that the requested operation has concluded and that the device requires its attention.
+	\item The interrupt is acknowledged by writing the acknowledge command code in device \textit{i}'s device register.
+	\item Device \textit{i}'s controller will de-assert the interrupt line and the protocol can restart.
+	For performance purposes, writing a new command after the interrupt is generated will both acknowledge the interrupt and start a new operation immediately.
+	\end{enumerate}
+	\end{quote}
+	The flash device registers are located in low-memory, starting at \texttt{0x100000D4} for \texttt{flash0} up to \texttt{0x10000144} for \texttt{flash7}.
+	Each register consists of 4 fields:
+	\begin{table}[h]
+	\centering
+	\begin{tabular}{c|c|c}
+	Field \# & Address & Field Name \\  \hline\hline
+	\texttt{0} & \texttt{(base) + 0x0} & \texttt{STATUS} \\ \hline
+	\texttt{1} & \texttt{(base) + 0x4} & \texttt{COMMAND} \\ \hline
+	\texttt{2} & \texttt{(base) + 0x8} & \texttt{DATA0} \\ \hline
+	\texttt{3} & \texttt{(base) + 0xc} & \texttt{DATA1}
+	\end{tabular}
+	\caption{Device Register Layout}
+	\end{table}
+
+	A flash device's register \texttt{STATUS} field is read-only and will contain one of the following status codes:
+	\begin{table}[h]
+	\centering
+	\begin{tabular}{c|c|c}
+	Code & Status & Possible Reason for Code \\  \hline\hline
+	\texttt{0} & \texttt{Device Not Installed} & Device not installed \\ \hline
+	\texttt{1} & \texttt{Device Ready} & Device waiting for a command \\ \hline
+	\texttt{2} & \texttt{Illegal Operation} & Device presented unknown command \\ \hline
+	\texttt{3} & \texttt{Device Busy} & Device executing a command \\ \hline
+	\texttt{4} & \texttt{Read Error} & Illegal parameter/hardware failure \\ \hline
+	\texttt{5} & \texttt{Write Error} & Illegal parameter/hardware failure \\ \hline
+	\texttt{6} & \texttt{DMA Transfer Error} & Illegal physical address/hardware failure
+	\end{tabular}
+	\caption{Flash Device Status Codes}
+	\end{table}
+	
+	From \cite{pops}:
+	\begin{quote}
+	Status codes 1, 2, and 4-6 are completion codes.
+	An illegal parameter may be an out of bounds value (e.g. a block number outside of [\texttt{0..MAXBLOCK-1}]), or a non-existent physical address for DMA transfers.
+
+	\newpage A flash device’s register \texttt{COMMAND} field is read/writable and is used to issue commands to the device:
+	\begin{table}[h]
+	\centering
+	\begin{tabular}{c|c|c}
+	Code & Command & Operation \\  \hline\hline
+	\texttt{0} & \texttt{RESET} & Reset the device interface \\ \hline
+	\texttt{1} & \texttt{ACK} & Acknowledge a pending interrupt \\ \hline
+	\texttt{2} & \texttt{READBLK} & \begin{tabular}[c]{@{}c@{}}Read the block located at \texttt{BLOCKNUMBER} and\\ copy it into RAM starting at the address in \texttt{DATA0}\end{tabular} \\ \hline
+	\texttt{3} & \texttt{WRITEBLK} & \begin{tabular}[c]{@{}c@{}}Copy the 4KB of RAM starting at the address in\\ \texttt{DATA0} into the block located at \texttt{BLOCKNUMBER}\end{tabular}
+	\end{tabular}
+	\caption{Flash Device Command Codes}
+	\end{table}
+	
+	The format of the \texttt{COMMAND} field is illustrated in Table 4.4:
+	\begin{table}[h]
+	\centering
+	\begin{tabularx}{\textwidth}{XXXXXXXXXXXXXXXX}
+	\texttt{31} & & & & & & & & & & & \multicolumn{1}{r}{\texttt{8}} & \texttt{7} & & & \multicolumn{1}{r}{\texttt{0}} \\ \hline
+	\multicolumn{1}{|l}{} & & & & & \multicolumn{2}{l}{\texttt{BLOCKNUMBER}} & & & & & \multicolumn{1}{l|}{} & & \multicolumn{2}{l}{\texttt{CODE}} & \multicolumn{1}{l|}{} \\ \hline
+	\end{tabularx}
+	\caption{Flash Device \texttt{COMMAND} Field}
+	\end{table}
+
+	An operation on a flash device is started by loading the appropriate value into the \texttt{COMMAND} field. For the duration of the operation the device's status is ``\texttt{Device Busy}''.
+	Upon completion of the operation an interrupt is raised and an appropriate status code is set; ``\texttt{Device Ready}'' for successful completion or one
+of the error codes.
+	The interrupt is then acknowledged by issuing an \texttt{ACK} or \texttt{RESET} command.
+
+	A flash device’s register \texttt{DATA0} field is read/writable and is used to specify the starting physical address for a read or write DMA operation.
+	Since memory is addressed from low addresses to high ones, this address is the lowest word-aligned physical address of the 4KB block about to be transferred.
+
+	\newpage Each device's register \texttt{DATA1} field is read-only and describes the physical characteristics of the device's geometry:
+	\begin{table}[h]
+	\centering
+	\begin{tabularx}{\textwidth}{XXXXXXXXXXXXXXXX}
+	\texttt{31} & & & \multicolumn{1}{r}{\texttt{24}} & \texttt{23} & & & & & & & & & & & \multicolumn{1}{r}{\texttt{0}} \\ \hline
+	\multicolumn{1}{|l}{\cellcolor{gray}} & \cellcolor{gray} & \cellcolor{gray} & \multicolumn{1}{l|}{\cellcolor{gray}} & & & & & & \multicolumn{2}{l}{\texttt{NUMBER OF BLOCKS}} & & & & & \multicolumn{1}{l|}{} \\ \hline
+	\end{tabularx}
+	\caption{Flash Device \texttt{DATA1} Field}
+	\end{table}
+	\end{quote}
+
 \chapter{Project Modernization}
 \lhead[\fancyplain{}{\bfseries\thepage}]{\fancyplain{}{\bfseries\rightmark}}
 \section{CMake Migration}
@@ -155,6 +342,11 @@
 	\textit{Supporting Operating Systems Projects Using the $\mu$MPS2 Hardware Simulator},
 	in \textit{Proceedings of the 17th ACM Annual Conference on Innovation and Technology in Computer Science Education},
 	ITiCSE ’12, (New York, NY, USA), pp. 63–68, ACM, July 2012.
+	
+	\bibitem{pops}
+	M. Goldweber, R. Davoli,
+	\textit{$\mu$MPS2 Principles of Operation},
+	Lulu Books, August 2011.
 
 \end{thebibliography}
 \end{document}
