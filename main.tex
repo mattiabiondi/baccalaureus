@@ -44,7 +44,16 @@
 \clearpage{\pagestyle{empty}\cleardoublepage}
 \selectlanguage{italian}
 \begin{abstract}
+  Uno dei metodi più efficaci per imparare qualcosa di nuovo è facendo pratica, e probabilmente, non esiste modo migliore di studiare un corso di Sistemi Operativi, se non scrivendo il proprio SO.
+  È tuttavia necessario prendere atto di quanto la realizzazione di un sistema operativo, in grado di girare su una vera macchina hardware, sia un compito eccessivamente complesso e quasi inadeguato per uno studente universitario.
+  Ciò non toglie che sia però possibile far uso di simulatori di sistemi semplificati rispetto alla realtà, al fine di riuscire nell'insegnamento dei fondamenti dell'Informatica in contesti universitari, permettendo così agli studenti di sperimentare con una rappresentazione di un sistema operativo abbastanza realistica.
 
+  $\mu$MPS è stato sviluppato proprio a questo scopo, un emulatore di sistemi pedagogicamente appropriato, basato sul microprocessore MIPS R2/3000, e dotato di un'architettura accessibile e di un ricco lista di dispositivi facilmente programmabili.
+  $\mu$MPS conta quasi vent'anni di sviluppo, ora aggiornato tramite la seguente tesi alla sua terza versione, chiamata $\mu$MPS3.
+ Quest'ultimo aggiornamento mira a semplificare, ancor di più, la complessità dell'emulatore, al fine di alleggerire il carico di lavoro richiesto agli studenti durante lo sviluppo e l'implementazione del sistema operativo.
+  Due di queste semplificazioni sono la rimozione del bit di memoria virtuale, che permetteva l'attivazione e la disattivazione della traduzione di indirizzi, e la sostituzione dei nastri, utilizzati come dispositivi di archiviazione, con delle nuove unità di memoria flash---certamente più familiari alla nuova generazione di studenti.
+
+  Grazie all'utilizzo di questo software e dei feedback ricevuti, nel corso degli ultimi dieci anni, è stato possibile non solo realizare la seguente tesi, ma anche apportare alcune importanti migliorie che riguardano tutti i campi, dagli strumenti di compilazione del progetto alla parte front-end, rendendo così $\mu$MPS un software pedagogico moderno e affidabile.
 \end{abstract}
 \clearpage{\pagestyle{empty}\cleardoublepage}
 \selectlanguage{english}
@@ -106,21 +115,34 @@
 \section{Document's Structure}
 \chapter{Memory Management}
 \lhead[\fancyplain{}{\bfseries\thepage}]{\fancyplain{}{\bfseries\rightmark}}
-	As for the two prior versions, the memory subsystem of $\mu$MPS3, being based on the MIPS 3000 microprocessor, is divided into physical and virtual.
-	Both parts have undergone significant modifications in this major revision, and they will be described in detail in this chapter along with the changes with respect to their old version.
-	The main reasons for the modifications made are the further simplification of the work required by the user for the kernel implementation and the better clarification of the emulator's memory internal view which caused some confusion in the past.
+	As for the two prior versions, the memory subsystem of $\mu$MPS3 is divided into physical and virtual.
+	Both parts have undergone significant modifications in this major revision, and they will be described in detail in this chapter alongside their old versions and respective changes.
+	
+	The main reasons for the modifications made are the further simplification of the work required by the user for the kernel implementation and the better clarification of the emulator's memory internal view, which, in the past, have caused some difficulties to the students.
 
 \section{Physical Memory}
-	The physical address space is divided into two big areas: a kernel reserved space, from address \texttt{0x0000.0000} to \texttt{0x1FFF.FFFF}, and the installed RAM, from address \texttt{0x2000.0000} to \texttt{RAMTOP}.
-
+	The physical address space is divided into two big areas: a kernel reserved space, from address \texttt{0x0000.0000} to \texttt{0x2000.0000}, and the installed RAM, from address \texttt{0x2000.0000} (\texttt{RAMBASE}) to \texttt{RAMTOP}. 
+	
 	This last value is calculated upon the value retrieved from the configuration file, settable from the machine's configuration dialog in the front-end emulator, which goes from a minimum of 8 to a maximum of 512 memory frames.
-	Being the size of each frame of 4 kilobyte, $\mu$MPS3 can have from 32KB up top 2MB of installed RAM. Hence, the value of \texttt{RAMTOP} range from \texttt{0x2000.8000} to \texttt{0x2020.0000}.
+	Being the size of each frame of 4 kilobyte, $\mu$MPS3 can have from 32KB up top 2MB of installed RAM.
+	Hence, the value of \texttt{RAMTOP} range from \texttt{0x2000.8000} to \texttt{0x2020.0000}.
+	
+	Since $\mu$MPS3 uses 32-bit addresses, it could support up to [$2^{32}$ - \texttt{RAMBASE}] $\simeq$ 3.5GB of RAM.
+	The 2MB graphical user interface limitation is imposed because, while it seems a ridicolous small amount of memory in today's ordinary systems, it is, actually, a lot more than how much has ever been required in all these years of $\mu$MPS use.
 
-	The first area was reserved for:
+	The first memory's big area is reserved for:
 	\begin{itemize}  
-	\item Execution ROM code, which layed in a read-only segment from address \texttt{0x0000.0000} to \texttt{ROMTOP};
-	\item prova.
+	\item the Execution ROM code, which lays in a read-only segment from address \texttt{0x0000.0000} to \texttt{ROMTOP}. This latter value is calculated upon the size of the Execution ROM;
+	\item the BIOS Data Page, from address \texttt{0x0FFF.F000} (\texttt{BIOSDATABASE}) to \texttt{0x1000.0000}. See Chapter 3.2 for more informations regarding this read/writable area segment;
+	\item the Bus Register Area, from address \texttt{0x1000.0000} to \texttt{0x1000.002C}: a 11 words area that will be described later in subsection ? of this Chapter;
+	\item the Installed Devices Bit Map, from address \texttt{0x1000.002C} to \\ \texttt{0x1000.0040}: a read-only five words area that indicates which devices are actually installed and where (Chapter ?.?.? of \cite{pops});
+	\item the Interrupting Devices Bit Map, from address \texttt{0x1000.0040} to \\ \texttt{0x1000.0054}: a read-only five words area that indicates which devices have an interrupt pending (Chapter ?.?.? of \cite{pops});
+  \item the Devices' Registers Area, from address \texttt{0x1000.0054} to \texttt{1000.02D4} (\texttt{DEVTOP}): a 160 words area (number of interrupt lines (8) $\times$ devices per interrupt line (5) $\times$  words per register (4)). See Chapter ?.?.? of \cite{pops} for more informations, or Table 4.1 for an example of one device's register;
+  \item the Bootstrap ROM code, which lays in a read-only segment from address \texttt{0x1FC0.0000} to \texttt{ROMTOP}. This latter value is calculated upon the size of the Bootstrap ROM.
 	\end{itemize}
+	
+	  DISEGNO DELL'AREA
+	  
 	This address space, corresponding to the first 0.5GB of physical memory, causes the raising of an Address Error when trying to access it while the processor was in user-mode.
 \section{TLB Floor Address}
 Come già citato nel cap. 2 (credo, memory), una delle conseguenze dell'implementazione del TLB Floor Adress come ultima parola del Bus Register Area è stato lo shifting (in su) di 1 parola (4 byte) delle due aree successive,Installed Devices Bit Map e Interrupting Devices Bit Map.
@@ -129,7 +151,7 @@ Come già citato nel cap. 2 (credo, memory), una delle conseguenze dell'implemen
 \chapter{Exception Handling}
 \lhead[\fancyplain{}{\bfseries\thepage}]{\fancyplain{}{\bfseries\rightmark}}
 \section{Primary Design}
-\section{BIOS Data area}
+\section{BIOS Data Page}
 \lhead[\fancyplain{}{\bfseries\thepage}]{\fancyplain{}{\bfseries\rightmark}}
 \chapter{Device Interfaces}
 \lhead[\fancyplain{}{\bfseries\thepage}]{\fancyplain{}{\bfseries\rightmark}}
@@ -140,7 +162,7 @@ Come già citato nel cap. 2 (credo, memory), una delle conseguenze dell'implemen
 
 	As for the functioning and implementation of the remaining devices, the reader may refer to the manual \textit{$\mu$MPS2 Principles of Operation} \cite{pops}.
 	
-\section{Tapes}
+\section{Tape drives}
 	MPS has been conceived and developed in the late '90s, and many updates and improvements have followed to make it as it is nowadays.
 
 	It is simple to imagine how much can technology achieve in over 20 years, and $\mu$MPS' devices are not exempt from this process.
@@ -148,9 +170,9 @@ Come già citato nel cap. 2 (credo, memory), una delle conseguenze dell'implemen
 
 	Network adapters are still present and properly taught in every IT class, although changed in their appearance, from physical to wireless, and certainly much faster, but the speed of the devices is not what concerns $\mu$MPS, on the contrary, the goal is to teach their functioning.
 
-	Whereas there is not a real reason to think about the replacement of printers and terminals, there is one last device category about which the same cannot be said: tape devices.
+	Whereas there is not a real reason to think about the replacement of printers and terminals, there is one last device category about which the same cannot be said: tape drives.
 
-	In modern ages, tape devices are only studied in History of computer science's classes, and are no longer found in real implementations if not in rare cases.
+	In modern ages, tape drives are only studied in History of computer science's classes, and are no longer found in real implementations if not in rare cases.
 	As a result, only older users still know what tapes are, their functioning and their use, therefore new generations are slowly losing consciousness of what they are or admittedly never heard of them.
 
 	Given all of this, it would have been a misstep not to use them, as when $\mu$MPS2 was released in 2011, technology was going through a transaction, and those who were still students knew of them. However, after almost ten years, the situation has changed, and tapes' final days have come.
@@ -160,13 +182,13 @@ Come già citato nel cap. 2 (credo, memory), una delle conseguenze dell'implemen
 
 	In order to let the students work with a storage device slower than disks, but still familiar to them, $\mu$MPS3 had to completely remove tapes to implement a new category of devices: flash drive devices.
 
-\section{Flash Devices}
+\section{Flash Drives}
 	A flash drive device, also know as ``USB sticks'' or ``SD cards'', is a storage device using flash memory, which is a solid-state memory, therefore not implemented through physical disks or tapes, and can be electrically erased and reprogrammed.
 	Unlike disks or tapes, a ``seek'' operation---that moves a head assembly over a physical surface---is not needed before reading from or writing to a specific block or sector.
 
 	In order to reproduce the same experience in $\mu$MPS3, the easiest way is to take a similar implemented device, the disk, remove the ``seek'' operation from it and simplify the coordinates system (cylinder, head, sector) to a single contiguous block addressable space [\texttt{0...MAXBLOCKS-1}].
 
-	Hence, a flash drive device is a readable/writable DMA device, divided into equal-sized frames of the same dimension of $\mu$MPS3's framesize, 4KB, each one accessible via specific block number.
+	Hence, a flash drive device is a read/writable DMA device, divided into equal-sized frames of the same dimension of $\mu$MPS3's framesize, 4KB, each one accessible via specific block number.
 
 	$\mu$MPS3 uses a 3 byte (24 bit) address space for flash device, consequently, each device in this category can have up to $2^{24}$ (\texttt{0xFFFFFF}) blocks of memory, which is equivalent to a maximum size of 64GB. 
 
@@ -184,7 +206,7 @@ Come già citato nel cap. 2 (credo, memory), una delle conseguenze dell'implemen
 	\begin{verbatim}
 	#define READRATIO   3/4
 	\end{verbatim}
-	This way, the read speed will always be 3/4 of the write speed, because $\to$ \texttt{WAIT FOR PROFS' ANSWER}
+	This way, the read speed will always be 25\% faster than write speed, since it will take 3/4 of the time, almost as in real world implementation.
 	
 \subsection{Creation}
 	As \texttt{umps2-mkdev} allowed to create tape devices' image files, \texttt{umps3-mkdev} permits to create flash device ones via the following syntax (also visible by running the utility with no arguments):
