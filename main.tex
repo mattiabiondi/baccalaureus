@@ -7,6 +7,23 @@
 \usepackage{abstract}
 \usepackage{tabularx}
 \usepackage{colortbl}
+\usepackage{multirow}
+\usepackage{graphicx}
+\usepackage{listings}
+\usepackage{subcaption}
+\usepackage[hidelinks]{hyperref}
+\definecolor{background}{HTML}{EEEEEE}
+\lstdefinelanguage{json}{
+    basicstyle=\footnotesize\ttfamily,
+    numbers=left,
+    numberstyle=\ttfamily,
+    stepnumber=1,
+    numbersep=8pt,
+    showstringspaces=false,
+    breaklines=true,
+    backgroundcolor=\color{background}
+}
+\graphicspath{ {./images/} }
 \oddsidemargin=30pt \evensidemargin=20pt
 \pagestyle{fancy}\addtolength{\headwidth}{20pt}\setlength{\headheight}{15pt}
 \renewcommand{\chaptermark}[1]{\markboth{\thechapter.\ #1}{}}
@@ -57,10 +74,25 @@
 \end{abstract}
 \clearpage{\pagestyle{empty}\cleardoublepage}
 \selectlanguage{english}
+\pagenumbering{roman}
 \tableofcontents
 \addtocontents{toc}{\protect\thispagestyle{empty}}
+\listoffigures
+\clearpage{\pagestyle{empty}\cleardoublepage}
 \listoftables
-\thispagestyle{empty}
+\clearpage{\pagestyle{empty}\cleardoublepage}
+\lstlistoflistings
+\clearpage{\pagestyle{empty}\cleardoublepage}
+
+\chapter*{Notational Conventions}
+\begin{itemize}
+  \item Words being defined are \textit{italicized};
+  \item A \texttt{typewriter-like typeface} is used for memory addresses, machine registers, instructions, file names, identifiers, and code fragments;
+  \item Memory addresses and operation codes are given in hexadecimal and displayed in big-endian format;
+  \item Bits of storage are numbered right-to-left, starting with 0;
+  \item All diagrams illustrating memory are going from low addresses to high addresses, using a left to right, bottom to top orientation.
+\end{itemize}
+
 \clearpage{\pagestyle{empty}\cleardoublepage}
 \pagenumbering{arabic}
 \chapter{Introduction}
@@ -112,46 +144,246 @@
 	Due to implementation aspects---unlike his predecessor $\mu$MPS2---this new version is not backward compatible with older ones.
 
 	\texttt{here I could talk about the Debian Packaging I will do when everything is finalized}
+	
 \section{Document's Structure}
+
 \chapter{Memory Management}
 \lhead[\fancyplain{}{\bfseries\thepage}]{\fancyplain{}{\bfseries\rightmark}}
-	As for the two prior versions, the memory subsystem of $\mu$MPS3 is divided into physical and virtual.
-	Both parts have undergone significant modifications in this major revision, and they will be described in detail in this chapter alongside their old versions and respective changes.
+	Like for the two prior versions, the memory subsystem of $\mu$MPS3 is divided into two views: physical and virtual.
+	Both parts have undergone significant modifications in this major revision, and they will be described in detail in this chapter, alongside their old versions and respective changes.
 	
 	The main reasons for the modifications made are the further simplification of the work required by the user for the kernel implementation and the better clarification of the emulator's memory internal view, which, in the past, have caused some difficulties to the students.
 
 \section{Physical Memory}
-	The physical address space is divided into two big areas: a kernel reserved space, from address \texttt{0x0000.0000} to \texttt{0x2000.0000}, and the installed RAM, from address \texttt{0x2000.0000} (\texttt{RAMBASE}) to \texttt{RAMTOP}. 
-	
-	This last value is calculated upon the value retrieved from the configuration file, settable from the machine's configuration dialog in the front-end emulator, which goes from a minimum of 8 to a maximum of 512 memory frames.
-	Being the size of each frame of 4 kilobyte, $\mu$MPS3 can have from 32KB up top 2MB of installed RAM.
-	Hence, the value of \texttt{RAMTOP} range from \texttt{0x2000.8000} to \texttt{0x2020.0000}.
-	
-	Since $\mu$MPS3 uses 32-bit addresses, it could support up to [$2^{32}$ - \texttt{RAMBASE}] $\simeq$ 3.5GB of RAM.
-	The 2MB graphical user interface limitation is imposed because, while it seems a ridicolous small amount of memory in today's ordinary systems, it is, actually, a lot more than how much has ever been required in all these years of $\mu$MPS use.
+	The physical address space is divided into two big areas [\autoref{fig:physical_memory}]: a \textit{kernel reserved space}, from address \texttt{0x0000.0000} to \texttt{0x2000.0000}, and the \textit{installed RAM}, from address \texttt{0x2000.0000} (\texttt{RAMBASE}) to \texttt{RAMTOP}.
 
-	The first memory's big area is reserved for:
+	This last value is calculated upon the one retrieved from the configuration file, settable from the machine's configuration dialog in the front-end emulator, which goes from a minimum of 8 to a maximum of 512 memory frames.
+	Being the size of each frame 4 kilobyte, $\mu$MPS3 can have from 32KB up to 2MB of installed RAM.
+	Hence, the value of \texttt{RAMTOP} range from \texttt{0x2000.8000} to \texttt{0x2020.0000}.
+
+  \begin{figure}[ht]
+  \centering
+  \begin{tabular}{cl}
+   & \multirow{2}{*}{\texttt{0xFFFF.FFFF}} \\ \cline{1-1}
+  \multicolumn{1}{|c|}{\multirow{2}{*}{\cellcolor{gray}}} &  \\ [-1ex]
+  \multicolumn{1}{|c|}{\cellcolor{gray}} & \multirow{2}{*}{\texttt{RAMTOP}} \\ \cline{1-1}
+  \multicolumn{1}{|c|}{\multirow{4}{*}{installed RAM}} &  \\
+  \multicolumn{1}{|c|}{} &  \\
+  \multicolumn{1}{|c|}{} &  \\
+  \multicolumn{1}{|c|}{} & \multirow{2}{*}{\texttt{0x2000.0000}} \\ \cline{1-1}
+  \multicolumn{1}{|c|}{\multirow{2}{*}{kernel reserved space}} &  \\
+  \multicolumn{1}{|c|}{} & \multirow{2}{*}{\texttt{0x0000.0000}} \\ \cline{1-1}
+  \multicolumn{1}{l}{} & 
+  \end{tabular}
+  \caption{Physical Memory}
+  \label{fig:physical_memory}
+  \end{figure}
+  
+\subsection{Kernel Reserved Space}
+\label{chap:kernel_reserved_space}
+	The first memory's big area [\autoref{fig:kernel_reserved_space}] is reserved for:
 	\begin{itemize}  
 	\item the Execution ROM code, which lays in a read-only segment from address \texttt{0x0000.0000} to \texttt{ROMTOP}. This latter value is calculated upon the size of the Execution ROM;
-	\item the BIOS Data Page, from address \texttt{0x0FFF.F000} (\texttt{BIOSDATABASE}) to \texttt{0x1000.0000}. See Chapter 3.2 for more informations regarding this read/writable area segment;
-	\item the Bus Register Area, from address \texttt{0x1000.0000} to \texttt{0x1000.002C}: a 11 words area that will be described later in subsection ? of this Chapter;
-	\item the Installed Devices Bit Map, from address \texttt{0x1000.002C} to \\ \texttt{0x1000.0040}: a read-only five words area that indicates which devices are actually installed and where (Chapter ?.?.? of \cite{pops});
-	\item the Interrupting Devices Bit Map, from address \texttt{0x1000.0040} to \\ \texttt{0x1000.0054}: a read-only five words area that indicates which devices have an interrupt pending (Chapter ?.?.? of \cite{pops});
-  \item the Devices' Registers Area, from address \texttt{0x1000.0054} to \texttt{1000.02D4} (\texttt{DEVTOP}): a 160 words area (number of interrupt lines (8) $\times$ devices per interrupt line (5) $\times$  words per register (4)). See Chapter ?.?.? of \cite{pops} for more informations, or Table 4.1 for an example of one device's register;
-  \item the Bootstrap ROM code, which lays in a read-only segment from address \texttt{0x1FC0.0000} to \texttt{ROMTOP}. This latter value is calculated upon the size of the Bootstrap ROM.
+	\item the BIOS Data Page, from address \texttt{0x0FFF.F000} (\texttt{BIOSDATABASE}) to \texttt{0x1000.0000}. This is a new area that has been implemented in a $\mu$MPS2's unused memory space.
+	See \autoref{chap:bios_data_page} for more informations regarding this read/writable area segment;
+	\item the Bus Register Area, from address \texttt{0x1000.0000} to \texttt{0x1000.002C}: a 11 words area that will be described later in \autoref{chap:tlb_floor_address};
+	\item the Installed Devices Bit Map, from address \texttt{0x1000.002C} to \\ \texttt{0x1000.0040}: a read-only five words area that indicates which devices are actually installed and where [\texttt{TODO} of \cite{pops}];
+	\item the Interrupting Devices Bit Map, from address \texttt{0x1000.0040} to \\ \texttt{0x1000.0054}: a read-only five words area that indicates which devices have an interrupt pending [\texttt{TODO} of \cite{pops}];
+  \item the Devices' Registers Area, from address \texttt{0x1000.0054} to \texttt{0x1000.02D4} (\texttt{DEVTOP}): a 160 words area (number of interrupt lines (8) $\times$ devices per interrupt line (5) $\times$  words per register (4)). See \texttt{TODO} of \cite{pops} for more informations, or \autoref{tab:device_register_layout} for an example of one device's register;
+  \item the Bootstrap ROM code, which lays in a read-only segment from address \texttt{0x1FC0.0000} to \texttt{BOOTTOP}. This latter value is calculated upon the size of the Bootstrap ROM.
+	\end{itemize}
+  \begin{figure}[ht]
+  \centering
+  \begin{tabular}{cl}
+  \multicolumn{1}{l}{} & \multirow{2}{*}{\texttt{0x2000.0000}} \\ \cline{1-1}
+  \multicolumn{1}{|l|}{\cellcolor{gray}} &  \\ [-3ex]
+  \multicolumn{1}{|l|}{\cellcolor{gray}} & \multirow{2}{*}{\texttt{BOOTTOP}} \\ \cline{1-1}
+  \multicolumn{1}{|c|}{\multirow{2}{*}{Bootstrap ROM}} &  \\ [-1ex]
+  \multicolumn{1}{|c|}{} & \multirow{2}{*}{\texttt{0x1FC0.0000}} \\ \cline{1-1}
+  \multicolumn{1}{|l|}{\multirow{2}{*}{\cellcolor{gray}}} &  \\ [-3ex]
+  \multicolumn{1}{|l|}{\cellcolor{gray}} & \multirow{2}{*}{\texttt{DEVTOP}} \\ \cline{1-1}
+  \multicolumn{1}{|c|}{\multirow{2}{*}{Devices' Register Area}} &  \\ [-1ex]
+  \multicolumn{1}{|c|}{} & \multirow{2}{*}{\texttt{0x1000.0054}} \\ \cline{1-1}
+  \multicolumn{1}{|c|}{\multirow{2}{*}{Interrupting Devices Bit Map}} &  \\ [-1ex]
+  \multicolumn{1}{|c|}{} & \multirow{2}{*}{\texttt{0x1000.0040}} \\ \cline{1-1}
+  \multicolumn{1}{|c|}{\multirow{2}{*}{Installed Devices Bit Map}} &  \\ [-1ex]
+  \multicolumn{1}{|c|}{} & \multirow{2}{*}{\texttt{0x1000.002C}} \\ \cline{1-1}
+  \multicolumn{1}{|c|}{\multirow{2}{*}{Bus Register Area}} &  \\ [-1ex]
+  \multicolumn{1}{|c|}{} & \multirow{2}{*}{\texttt{0x1000.0000}} \\ \cline{1-1}
+  \multicolumn{1}{|c|}{\multirow{2}{*}{BIOS Data Page}} &  \\ [-1ex]
+  \multicolumn{1}{|c|}{} & \multirow{2}{*}{\texttt{0x0FFF.F000}} \\ \cline{1-1}
+  \multicolumn{1}{|l|}{\multirow{2}{*}{\cellcolor{gray}}} &  \\ [-3ex]
+  \multicolumn{1}{|l|}{\cellcolor{gray}} & \multirow{2}{*}{\texttt{ROMTOP}} \\ \cline{1-1}
+  \multicolumn{1}{|c|}{\multirow{2}{*}{Execution ROM}} &  \\ [-1ex]
+  \multicolumn{1}{|c|}{} & \multirow{2}{*}{\texttt{0x0000.0000}} \\ \cline{1-1}
+  \multicolumn{1}{l}{} & 
+  \end{tabular}
+  \caption{Kernel Reserved Space's Structure}
+  \label{fig:kernel_reserved_space}
+  \end{figure}
+  Any attempt to access an undefined memory area (\texttt{ROMTOP...0x0FFF.F000}, \texttt{DEVTOP...0x1FC0.0000}, \texttt{BOOTTOP...0x2000.0000}) will generate a \textit{Bus Error exception} [\autoref{chap:exception_handling}]. 
+
+\subsection{RAM Space}
+	The maximum \texttt{RAMTOP} value that could be actually set is \texttt{0x2020.0000}.
+	However, since $\mu$MPS3 uses 32-bit addresses, it could support up to [$2^{32}$ - \texttt{RAMBASE}] $\simeq$ 3.5GB of RAM.
+	The 2MB graphical user interface limitation is imposed because, while it seems a ridiculously small amount of memory in today's ordinary systems, it is, actually, a lot more than has ever been required in all these years of $\mu$MPS use.
+	
+	This area will hold:
+	\begin{itemize}  
+	\item the operating system's code (\textit{text}), global variables/structures (\textit{data}), and stack(s);
+	\item The user processes' \textit{text}, \textit{data} and stacks.
+	\end{itemize}
+	As for the previous big area, any attempt to access the undefined memory area that lays from \texttt{RAMTOP} up to \texttt{0xFFFF.FFFF} will generate a Bus Error exception.
+ 
+\section{Virtual Memory}
+  The virtual memory subsystem is implemented through a segmented-paged scheme.
+  Hence, a new abstraction layer is laid on the whole physical memory structure, subdividing it into four big segments [\autoref{fig:new_segments}]:
+  \begin{itemize}  
+	\item \textit{kseg0}, from address \texttt{0x0000.0000} to \texttt{0x2000.0000}: a 0.5GB segment reserved for the Kernel Reserved Space [\autoref{chap:kernel_reserved_space}];
+	\item \textit{kseg1}, from address \texttt{0x2000.0000} to \texttt{0x4000.0000}: a 0.5GB segment reserved for OS \textit{text}, \textit{data} and stacks;
+	\item \textit{kseg2}, from address \texttt{0x4000.0000} to \texttt{0x8000.0000}: a 1GB segment reserved for OS \textit{text}, \textit{data} and stacks;
+	\item \textit{kuseg}, from address \texttt{0x8000.0000} to \texttt{0xFFFF.FFFF}: a 2GB segment reserved for user processes' \textit{text}, \textit{data} and stacks;
+	\end{itemize}
+	This subdivision differs from $\mu$MPS2's one, as it was divided in three different segments [\autoref{fig:old_segments}]:
+	  \begin{itemize}  
+	\item \textit{ksegOS}, from address \texttt{0x0000.0000} to \texttt{0x8000.0000}: a 2GB segment reserved for OS \textit{text}, \textit{data} and stacks, along with all the structures that sit in the kernel reserved space up to address \texttt{0x2000.0000};
+	\item \textit{kUseg2}, from address \texttt{0x8000.0000} to \texttt{0xC000.0000}: a 1GB virtual address space reserved for user processes' \textit{text}, \textit{data} and stacks;
+	\item \textit{kUseg3}, from address \texttt{0xC000.0000} to \texttt{0xFFFF.FFFF}: another 1GB virtual address space reserved for the use of user-mode processes.
 	\end{itemize}
 	
-	  DISEGNO DELL'AREA
-	  
-	This address space, corresponding to the first 0.5GB of physical memory, causes the raising of an Address Error when trying to access it while the processor was in user-mode.
-\section{TLB Floor Address}
-Come già citato nel cap. 2 (credo, memory), una delle conseguenze dell'implementazione del TLB Floor Adress come ultima parola del Bus Register Area è stato lo shifting (in su) di 1 parola (4 byte) delle due aree successive,Installed Devices Bit Map e Interrupting Devices Bit Map.
-	Un'altra differenza rispetto ad uMPS2 è, dunque, il valore delle costanti da utilizzare durante il calcolo del starting address of a device's device register, che dovranno essere aumentate di una parola rispetto alla versione precedente.
-\section{VM Bit Removal}
+	\begin{figure}[h]
+    \centering
+    \begin{subfigure}[b]{0.4\textwidth}
+        \renewcommand{\arraystretch}{0.70}
+        \begin{tabular}{cl}
+        \multicolumn{1}{m{3cm}}{} & \multirow{2}{*}{\texttt{0xFFFF.FFFF}} \\ \cline{1-1}
+        \multicolumn{1}{|c|}{\multirow{2}{*}{kUseg3}} &  \\
+        \multicolumn{1}{|c|}{} & \multirow{2}{*}{\texttt{0xC000.0000}} \\ \cline{1-1}
+        \multicolumn{1}{|c|}{\multirow{2}{*}{kUseg2}} &  \\
+        \multicolumn{1}{|c|}{} & \multirow{2}{*}{\texttt{0x8000.0000}} \\ \cline{1-1}
+        \multicolumn{1}{|c|}{\multirow{8}{*}{ksegOS}} &  \\
+        \multicolumn{1}{|c|}{} & \multirow{2}{*}{} \\
+        \multicolumn{1}{|c|}{} &  \\
+        \multicolumn{1}{|c|}{} & \multirow{2}{*}{} \\
+        \multicolumn{1}{|c|}{} &  \\
+        \multicolumn{1}{|c|}{} & \multirow{2}{*}{} \\
+        \multicolumn{1}{|c|}{} &  \\
+        \multicolumn{1}{|c|}{} & \multirow{2}{*}{\texttt{0x0000.0000}} \\ \cline{1-1}
+        \multicolumn{1}{l}{} & 
+        \end{tabular}
+        \caption{Old Segments}
+        \label{fig:old_segments}
+    \end{subfigure}
+    \qquad
+    \qquad
+    \begin{subfigure}[b]{0.4\textwidth}
+        \renewcommand{\arraystretch}{0.70}
+        \begin{tabular}{cl}
+        \multicolumn{1}{m{3cm}}{} & \multirow{2}{*}{\texttt{0xFFFF.FFFF}} \\ \cline{1-1}
+        \multicolumn{1}{|c|}{\multirow{4}{*}{kuseg}} &  \\
+        \multicolumn{1}{|c|}{} & \multirow{2}{*}{} \\
+        \multicolumn{1}{|c|}{} &  \\
+        \multicolumn{1}{|c|}{} & \multirow{2}{*}{\texttt{0x8000.0000}} \\ \cline{1-1}
+        \multicolumn{1}{|c|}{\multirow{4}{*}{kseg2}} &  \\
+        \multicolumn{1}{|c|}{} & \multirow{2}{*}{} \\
+        \multicolumn{1}{|c|}{} &  \\
+        \multicolumn{1}{|c|}{} & \multirow{2}{*}{\texttt{0x4000.0000}} \\ \cline{1-1}
+        \multicolumn{1}{|c|}{\multirow{2}{*}{kseg1}} &  \\
+        \multicolumn{1}{|c|}{} & \multirow{2}{*}{\texttt{0x2000.0000}} \\ \cline{1-1}
+        \multicolumn{1}{|c|}{\multirow{2}{*}{kseg0}} &  \\
+        \multicolumn{1}{|c|}{} & \multirow{2}{*}{\texttt{0x0000.0000}} \\ \cline{1-1}
+        \multicolumn{1}{l}{} & 
+        \end{tabular}
+        \caption{New Segments}
+        \label{fig:new_segments}
+    \end{subfigure}
+    \caption{Virtual Address Space}
+    \label{fig:virtual_address_space}
+\end{figure}
+
+  The first 2GB of physical memory, corresponding to all the addresses below \texttt{0x8000.0000}, were and are reserved only to kernel-mode access, therefore, any attempt to access them while the processor is in user-mode will cause the raising of an \textit{Address Error} [\autoref{chap:exception_handling}].
+  
+  In previous versions, wether this subdivision was active or not, it was controlled by the \textit{VM bit}.
+  With the VM bit off, no particular actions were required when accessing the memory space.
+  Instead, when the VM bit was on, all the address above \texttt{0x2000.0000} were considered virtual, and therefore subject to \textit{virtual address translation}---the process to associate a non-accessible address to a physical one.
+  By doing this, instead of the actual physical memory available, the processes perceive an abstract view of the address space.
+  
+  While the virtual address translation process [\texttt{TODO} of \cite{pops}] has not been significantly changed, compared to the previous version, the VM bit has been completely removed.
+  
+\subsection{VM Bit Removal}
+  The VM bit was originally introduced in the first version of $\mu$MPS, with the intent of simplifying the complex virtual memory management system of the MIPS R3000 microprocessor.
+  The activation and deactivation of it was accomplished through the system control coprocessor \textit{CP0}.
+  
+  It provides a 32-bit \textit{Status} register that controls various aspects of the emulator, described in details at \texttt{TODO} of \cite{pops}.
+  Along with the current register's options set, it also provided the possibility, by using bitwise operations, to control the VM bit's status: it was implemented as a 3-slot deep bit stack (current, previous, previous of previous) which was pushed or popped depending on whether an exception was raised or an interrupted execution stream was restarted [section 3.2 and subsection 6.2.1 of \cite{old_pops}].
+  
+  The VM bit removal is one of $\mu$MPS3's main features: the push/pop system has been removed, and the three bits that were reserved for it are now completely ignored. 
+  Hence, from now on, the virtual memory is conceptually \textbf{always on}.
+  This means that all the addresses above a certain value are considered virtual and therefore, subject to virtual address translation.
+  This specific value, while in previous version was fixed at \texttt{0x2000.0000}, is now contained in a variable called \textit{TLB Floor Address}
+  
+\subsection{TLB Floor Address}
+\label{chap:tlb_floor_address}
+  The TLB Floor Address is a new parameter implemented in $\mu$MPS3, responsible for indicating which addresses from a certain value on are considered virtual.
+  
+  This parameter can be chosen directly from the configuration dialog in the emulator's front-end, as Figure \ref{fig:tlb_floor_address} shows:
+  \begin{figure}[h]
+  \centering
+  \includegraphics[scale=0.73]{tlb_floor_address}
+  \caption{TLB Floor Address}
+  \label{fig:tlb_floor_address}
+  \end{figure}
+
+  The last option, \texttt{VM OFF}, is internally declared as \texttt{0xFFFF.FFFF}: since it is not possible to access to an address above this value, the entire physical memory is necessarily below it, and therefore, an address translation could never happen.
+ 
+	The TLB Floor Address value is stored in the Bus Register Area, thereby adding one word to the ten words area of the previous version [\autoref{tab:bus_register_area}]:
+	\begin{table}[h]
+	\centering
+  \begin{tabular}{|c|c|}
+  \hline
+  Physical Address & Field Name \\ \hline\hline
+  \texttt{0x1000.0000} & RAM Base Physical Address \\ \hline
+  \texttt{0x1000.0004} & Installed RAM Size \\ \hline
+  \texttt{0x1000.0008} & Exec. ROM Base Physical Address \\ \hline
+  \texttt{0x1000.000C} & Installed Exec. ROM Size \\ \hline
+  \texttt{0x1000.0010} & Bootstrap ROM Base Physical Address \\ \hline
+  \texttt{0x1000.0014} & Installed Bootstrap ROM Size \\ \hline
+  \texttt{0x1000.0018} & Time of Day Clock - High \\ \hline
+  \texttt{0x1000.001C} & Time of Day Clock - Low \\ \hline
+  \texttt{0x1000.0020} & Interval Timer \\ \hline
+  \texttt{0x1000.0024} & Time Scale \\ \hline
+  \texttt{0x1000.0028} & \textbf{TLB Floor Address} \\ \hline
+  \end{tabular}
+  \caption{Bus Register Area}
+  \label{tab:bus_register_area}
+  \end{table}
+  
+  This area contains various fields used in $\mu$MPS3's lifetime cycle to properly work.
+  Some of them are read-only and calculated at boot/reset time, while others are read/writable.
+  See \texttt{TODO} of \cite{pops} for more informations regarding this area.
+  
+  The TLB Floor Address's field cannot be changed while the emulator is running, but only from the front-end dialog.
+  
+  After saving the machine's configuration from the front-end dialog, the TLB Floor Address's value will be placed inside the JSON-based configuration's file, described in detail in subsection 4.2.1 of Jonjic's Thesis \cite{tjonjic}.
+  
+  An example of the final portion of a simple machine's configuration is represented in Listing \ref{lst:tlb_floor_adress}:
+  \begin{lstlisting}[language=json,firstnumber=19,caption={TLB Floor Address},captionpos=b,label={lst:tlb_floor_adress}]
+    ...
+    },
+    "tlb-floor-address": "0x40000000",
+    "tlb-size": 16
+  }
+  \end{lstlisting}
+  On line 21 is shown the value saved as \textit{string}: this decision was taken to preserve the human-readable notational convention, used across all $\mu$MPS3's environment, consisting of addresses written in hexadecimal base, preceded by the ``\texttt{0x}'' prefix.
+  
+  One of the consequences of the implementation of this value at the end of the Bus Register Area has been the shifting up of one word of the two successive areas, Installed Devices Bit Map and Interrupting Devices Bit Map.
+  
 \chapter{Exception Handling}
+\label{chap:exception_handling}
 \lhead[\fancyplain{}{\bfseries\thepage}]{\fancyplain{}{\bfseries\rightmark}}
 \section{Primary Design}
 \section{BIOS Data Page}
+\label{chap:bios_data_page}
 \lhead[\fancyplain{}{\bfseries\thepage}]{\fancyplain{}{\bfseries\rightmark}}
 \chapter{Device Interfaces}
 \lhead[\fancyplain{}{\bfseries\thepage}]{\fancyplain{}{\bfseries\rightmark}}
@@ -166,14 +398,14 @@ Come già citato nel cap. 2 (credo, memory), una delle conseguenze dell'implemen
 	MPS has been conceived and developed in the late '90s, and many updates and improvements have followed to make it as it is nowadays.
 
 	It is simple to imagine how much can technology achieve in over 20 years, and $\mu$MPS' devices are not exempt from this process.
-	Therefore, it may not be a surprise talking about how hard disk drives are, nowadays, less and less used, outclassed by new solid-state drives, despite still being common knowledge.
+	Therefore, it may not be a surprise talking about how hard disk drives are, nowadays, less and less used, outclassed by new solid-state drives, despite their still being common knowledge.
 
 	Network adapters are still present and properly taught in every IT class, although changed in their appearance, from physical to wireless, and certainly much faster, but the speed of the devices is not what concerns $\mu$MPS, on the contrary, the goal is to teach their functioning.
 
 	Whereas there is not a real reason to think about the replacement of printers and terminals, there is one last device category about which the same cannot be said: tape drives.
 
 	In modern ages, tape drives are only studied in History of computer science's classes, and are no longer found in real implementations if not in rare cases.
-	As a result, only older users still know what tapes are, their functioning and their use, therefore new generations are slowly losing consciousness of what they are or admittedly never heard of them.
+	As a result, only older users still know what tapes are, their functioning and their use, therefore new generations are slowly losing consciousness of what they are or, admittedly, never heard of them.
 
 	Given all of this, it would have been a misstep not to use them, as when $\mu$MPS2 was released in 2011, technology was going through a transaction, and those who were still students knew of them. However, after almost ten years, the situation has changed, and tapes' final days have come.
   
@@ -183,7 +415,7 @@ Come già citato nel cap. 2 (credo, memory), una delle conseguenze dell'implemen
 	In order to let the students work with a storage device slower than disks, but still familiar to them, $\mu$MPS3 had to completely remove tapes to implement a new category of devices: flash drive devices.
 
 \section{Flash Drives}
-	A flash drive device, also know as ``USB sticks'' or ``SD cards'', is a storage device using flash memory, which is a solid-state memory, therefore not implemented through physical disks or tapes, and can be electrically erased and reprogrammed.
+	A flash drive device, also know as ``USB sticks'' or ``SD cards'', is a storage device using flash memory, which is a solid-state memory, therefore not implemented through physical disks or tapes, that can be electrically erased and reprogrammed.
 	Unlike disks or tapes, a ``seek'' operation---that moves a head assembly over a physical surface---is not needed before reading from or writing to a specific block or sector.
 
 	In order to reproduce the same experience in $\mu$MPS3, the easiest way is to take a similar implemented device, the disk, remove the ``seek'' operation from it and simplify the coordinates system (cylinder, head, sector) to a single contiguous block addressable space [\texttt{0...MAXBLOCKS-1}].
@@ -202,11 +434,11 @@ Come già citato nel cap. 2 (credo, memory), una delle conseguenze dell'implemen
 	\end{verbatim}
 	Like intuitively understable from parameters' name, the first one is for disks' default seek time, while the latter is for flash devices' default write time. This means that, if not voluntarily indicated by the user who creates a device, the flash devices' write time will always be ten times slower the disks' seek time.
 	
-	Flash devices' read time can't be directly defined, but it will be calculated \textit{ad-hoc} when needed by multiplying the device's set write time by: 
+	Flash devices' read time cannot be directly defined, but it will be calculated \textit{ad-hoc} when needed by multiplying the device's set write time by: 
 	\begin{verbatim}
 	#define READRATIO   3/4
 	\end{verbatim}
-	This way, the read speed will always be 25\% faster than write speed, since it will take 3/4 of the time, almost as in real world implementation.
+	This way, the read speed will always be 25\% faster than write speed, since it will take 3/4 of time, almost as in real world implementation.
 	
 \subsection{Creation}
 	As \texttt{umps2-mkdev} allowed to create tape devices' image files, \texttt{umps3-mkdev} permits to create flash device ones via the following syntax (also visible by running the utility with no arguments):
@@ -215,15 +447,17 @@ Come già citato nel cap. 2 (credo, memory), una delle conseguenze dell'implemen
 	\end{verbatim}
 	where:
 	\begin{itemize}
-	\item	\texttt{-f} : specify that we want to create a flash device image instead o a disk's one (\texttt{-d});
+	\item	\texttt{-f} : specify a flash device image's creation instead of a disk's one (\texttt{-d});
 	\item	\texttt{<flashfile>} : the flash device image file's name that will be created;
-	\item	\texttt{<file>} : existing file to be written into the new flash device image;
+	\item	\texttt{<file>} : file to be written into the new flash device image;
 	\item	\texttt{blocks} : number of blocks [\texttt{1...0xFFFFFF}] (default = 512);
 	\item	\texttt{wt} : average write time (in microseconds) [1...100000] (default = 1000);
 	\end{itemize}
+	It is also possible to create an empty flash image file by passing ``\texttt{/dev/null}'' as \texttt{<file>} argument.
+	
 	Going more in detail, after correctly running the previous command, the utility will decode command-line's argument, if existing.
 	
-	Then, it will attempt to open, via a common \texttt{fopen}, the flash device's image file in write-mode.
+  Then, it will attempt to open, via a common \texttt{fopen}, the flash device's image file in write-mode.
 	If the operation is successfull, a \texttt{FLASHFILEID} (\texttt{0x0153504D}) will be written into the first word of memory of the file by using an \texttt{fwrite} function.
 	This file recognition tag is used to distinguish this type of file from all the other types of files generated or recognized by $\mu$MPS3.
 	
@@ -266,6 +500,7 @@ Come già citato nel cap. 2 (credo, memory), una delle conseguenze dell'implemen
 	\texttt{3} & \texttt{(base) + 0xc} & \texttt{DATA1}
 	\end{tabular}
 	\caption{Device Register Layout}
+	\label{tab:device_register_layout}
 	\end{table}
 
 	A flash device's register \texttt{STATUS} field is read-only and will contain one of the following status codes:
@@ -289,7 +524,7 @@ Come già citato nel cap. 2 (credo, memory), una delle conseguenze dell'implemen
 	Status codes 1, 2, and 4-6 are completion codes.
 	An illegal parameter may be an out of bounds value (e.g. a block number outside of [\texttt{0..MAXBLOCK-1}]), or a non-existent physical address for DMA transfers.
 
-	\newpage A flash device’s register \texttt{COMMAND} field is read/writable and is used to issue commands to the device:
+	A flash device’s register \texttt{COMMAND} field is read/writable and is used to issue commands to the device:
 	\begin{table}[h]
 	\centering
 	\begin{tabular}{c|c|c}
@@ -302,15 +537,16 @@ Come già citato nel cap. 2 (credo, memory), una delle conseguenze dell'implemen
 	\caption{Flash Device Command Codes}
 	\end{table}
 	
-	The format of the \texttt{COMMAND} field is illustrated in Table 4.4:
-	\begin{table}[h]
+	The format of the \texttt{COMMAND} field is illustrated in \autoref{fig:flash_dev_command_field}:
+	\begin{figure}[h]
 	\centering
 	\begin{tabularx}{\textwidth}{XXXXXXXXXXXXXXXX}
 	\texttt{31} & & & & & & & & & & & \multicolumn{1}{r}{\texttt{8}} & \texttt{7} & & & \multicolumn{1}{r}{\texttt{0}} \\ \hline
 	\multicolumn{1}{|l}{} & & & & & \multicolumn{2}{l}{\texttt{BLOCKNUMBER}} & & & & & \multicolumn{1}{l|}{} & & \multicolumn{2}{l}{\texttt{CODE}} & \multicolumn{1}{l|}{} \\ \hline
 	\end{tabularx}
 	\caption{Flash Device \texttt{COMMAND} Field}
-	\end{table}
+	\label{fig:flash_dev_command_field}
+	\end{figure}
 
 	An operation on a flash device is started by loading the appropriate value into the \texttt{COMMAND} field. For the duration of the operation the device's status is ``\texttt{Device Busy}''.
 	Upon completion of the operation an interrupt is raised and an appropriate status code is set; ``\texttt{Device Ready}'' for successful completion or one
@@ -320,15 +556,16 @@ of the error codes.
 	A flash device’s register \texttt{DATA0} field is read/writable and is used to specify the starting physical address for a read or write DMA operation.
 	Since memory is addressed from low addresses to high ones, this address is the lowest word-aligned physical address of the 4KB block about to be transferred.
 
-	\newpage Each device's register \texttt{DATA1} field is read-only and describes the physical characteristics of the device's geometry:
-	\begin{table}[h]
+	Each device's register \texttt{DATA1} field is read-only and describes the physical characteristics of the device's geometry [\autoref{fig:flash_dev_data1}].
+	\begin{figure}[h]
 	\centering
 	\begin{tabularx}{\textwidth}{XXXXXXXXXXXXXXXX}
 	\texttt{31} & & & \multicolumn{1}{r}{\texttt{24}} & \texttt{23} & & & & & & & & & & & \multicolumn{1}{r}{\texttt{0}} \\ \hline
 	\multicolumn{1}{|l}{\cellcolor{gray}} & \cellcolor{gray} & \cellcolor{gray} & \multicolumn{1}{l|}{\cellcolor{gray}} & & & & & & \multicolumn{2}{l}{\texttt{NUMBER OF BLOCKS}} & & & & & \multicolumn{1}{l|}{} \\ \hline
 	\end{tabularx}
 	\caption{Flash Device \texttt{DATA1} Field}
-	\end{table}
+	\label{fig:flash_dev_data1}
+	\end{figure}
 	\end{quote}
 
 \chapter{Project Modernization}
@@ -365,10 +602,15 @@ of the error codes.
 	in \textit{Proceedings of the 17th ACM Annual Conference on Innovation and Technology in Computer Science Education},
 	ITiCSE ’12, (New York, NY, USA), pp. 63–68, ACM, July 2012.
 	
-	\bibitem{pops}
+	\bibitem{old_pops}
 	M. Goldweber, R. Davoli,
 	\textit{$\mu$MPS2 Principles of Operation},
 	Lulu Books, August 2011.
+	
+	\bibitem{tjonjic}
+	T. Jonjic,
+	\textit{Design and Implementation of the $\mu$MPS2 Educational Emulator},
+	University of Bologna, 2012.
 
 \end{thebibliography}
 \end{document}
