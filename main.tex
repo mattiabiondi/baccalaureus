@@ -156,6 +156,7 @@ Both parts have undergone significant modifications in this major revision, and 
 The main reasons for the modifications made are the further simplification of the work required by the user for the kernel implementation and the better clarification of the emulator's memory internal view, which, in the past, have caused some difficulties to the students.
 
 \section{Physical Memory}
+\label{chap:physical_memory}
 The physical address space is divided into two big areas [\autoref{fig:physical_memory}]: a \textit{kernel reserved space}, from address \texttt{0x0000.0000} to \texttt{0x2000.0000}, and the \textit{installed RAM}, from address \texttt{0x2000.0000} (\texttt{RAMBASE}) to \texttt{RAMTOP}.
 
 This last value is calculated upon the one retrieved from the configuration file, settable from the machine's configuration dialog in the front-end emulator, which goes from a minimum of 8 to a maximum of 512 memory frames.
@@ -868,9 +869,153 @@ From \cite{pops}:
 
 \chapter{Project Modernization}
 \lhead[\fancyplain{}{\bfseries\thepage}]{\fancyplain{}{\bfseries\rightmark}}
-\section{CMake Migration}
-\section{Qt5 Transition}
-\section{Logo and Icon Theme}
+Many years have passed since the release of $\mu$MPS' first version, and some aspects of it have become inevitably outdated.
+Along with all the emulator's changes described in the previous chapters, the software went through a modernization attempt which tried to update it to current standards and common procedures.
+Each modification made will be described in this chapter, together with the reasons to implement them, crucial for the aim of using the software for many years to come.
+
+\section{Build System}
+Developing software to use as a pedagogical tool requires being aware of some aspects.
+It will need to be spread among the students, hopefully, one copy per person.
+Schools and Universities usually dispose of computer labs, but the possibility of working on it from home is always appreciated.
+This is particularly convenient when the software concerned will be used as a study aid in a computer class, and it is well-known that programmers work at any time of day (or night).
+
+Given this premise, the tool should be installable on the students' personal computers, and one problem that doesn't usually show up on laboratories' machines is the system diversity.
+The software's developers could surely give requirements and instructions on how to install it on different computers depending, for example, on the hardware, but when it comes to large projects with lots of dependencies and steps to be able to run it, it is always preferable to use an automatic process.
+$\mu$MPS represents a classical example of this kind of big project, with a not so simple building and installing procedure.
+
+In the late 1990s, when its development started, there was principally one solution: the \textit{GNU Autotools}.
+GNU Autotools were the, de facto, reference toolchain of programs helping developers to distribute their software fulfilling the users of complex procedures.
+
+These tools are known as the \textit{Build System} of a project, and they allow to define a series of instructions spread over files within the source code directory.
+The initial \textit{configuration} phase will follow these instructions, generating a specific file depending on the operating environment on which it will run.
+From the programming view, they avoid distributing different procedures or source code for every system implementation, because, after setting everything up as needed, they will take care of it.
+From the user perspective, after obtaining the source code, the \textit{building} phase will be possible in just a couple of predefined steps.
+It is also important to note that the building tools of a project are the first thing a user needs to interface to.
+In addition, for those not skilled students, the software's installation could be their first-ever experience with them.
+
+The Autools are still a very popular choice during the design stage of a software, but, with time, many other valid alternatives arose.
+For this reason, this third $\mu$MPS' version tries to simplify its installation phase by moving to a new building suite, which has been one of the most popular choices over the last few years: \textit{CMake}.
+
+\subsection{CMake}
+Migrating $\mu$MPS3 to CMake has brought some benefits.
+First of all, whoever experienced the installation of the previous version can now notice a significant increase speed of this phase.
+CMake has a faster building time due to the avoidance of numerous system checks that the other building tools do.
+More verifications means more reliability, but most of Autotools' checks were on system's feature which has been integrated by default in every distribution or in the Linux kernel itself, making them useless.
+
+CMake is also much less wordy, requiring a minor number of files in the source code's directory and far fewer lines of code.
+Hence, from a programming perspective, the whole codebase is now ``lighter''.
+
+Since a lot of relatively recent projects are based on this building tool, it should be easier to learn too, and this could encourage development contributions by novice programmers.
+
+Lastly, $\mu$MPS2 have gone through a graphical user interface upgrade, discarding the original one and re-designing everything in \textit{Qt}.
+This important process was necessary to keep up with today's standard, but, unfortunately, the Autotools don't combine well with the new GUI of choice.
+It is surely possible to make them work together, as it has been until now, but this requires a heavy configuration, not recommended most of the time given the alternatives.
+$\mu$MPS3 could have just used the already implemented Autotools' structure, but another update, almost completely incompatible with the old building tools, had to be done: the transition from Qt4 to Qt5.
+
+\section{Graphical User Interface}
+$\mu$MPS' front-end is one of its most important aspects, since it is the first thing a student sees after launching it.
+Being a pedagogical tool, one should expect it to be used by any level of experience in the area, hence, it should be the most intuitive possible.
+Nevertheless, this must not prevent the possibility to access every advanced feature directly from the GUI.
+Jonjic has perfectly succeeded in this goal implementing the current one, described in detail in the 3rd chapter of his thesis \cite{tjonjic}, and this third version of the software brings only an update of the one built by him.
+
+\subsection{Qt5}
+Qt is a toolkit for creating graphical user interfaces, and the currently available version is the fifth one.
+It has been originally released just a couple of years later than $\mu$MPS2, which is built upon the fourth one.
+The time to migrate to this new version has certainly come, and thanks to their high compatibility all the process went significantly smooth.
+The rule applied during the transition was the classical ``if it is not broke, don't fix it'', maintaining the same interface already implemented and upgrading just the essential.
+
+From the user perspective view, $\mu$MPS3 tries to make a couple of aspects even more intuitive than before, thanks to the students' feedbacks acquired during the years.
+
+\subsection{Logo and Icon Theme}
+The very first visible characteristic is the new icon theme.
+The decision to update has been made because the old ones were not much intuitive for some common actions, like the two dedicated for switching on and off the machine, compared along with the new ones in \autoref{tab:start_stop_icons}.
+
+\begin{table}[h]
+	\centering
+	\begin{tabular}{c|c|c|}
+		\cline{2-3}
+		\multicolumn{1}{l|}{}           & Old                                                          & New                                                               \\ \hline
+		\multicolumn{1}{|c|}{Power ON}  & \raisebox{-8px}{\includegraphics[scale=1]{machine_start-22}} & \raisebox{-10px}{\includegraphics[scale=1, width=22px]{start-22}} \\ \hline
+		\multicolumn{1}{|c|}{Power OFF} & \raisebox{-8px}{\includegraphics[scale=1]{machine_halt-22}}  & \raisebox{-10px}{\includegraphics[scale=1, width=22px]{halt-22}}  \\ \hline
+	\end{tabular}
+	\caption{Start and Halt icons}
+	\label{tab:start_stop_icons}
+\end{table}
+
+These two icons were available as shortcuts in the top bar of the GUI.
+Since they were alternating each other (the one for turning on the machine was disabled once pressed, the other one was available only with the machine powered on), they have been merged in a single shortcut displaying only the action currently available.
+
+Similarly, the same procedure has been done for the two ``start'' and ``stop'' icons.
+
+Another reason for changing the icon theme was the replacement of tapes with flash devices, whose icon was not available in the previous one.
+
+All the new images are in the SVG format, which is an advantage in years like these, were the resolution and DPI of computers' screens are increasing quickly.
+With the drop of all the other PNG icons, these new ones could be easily scaled up in the future if needed, without losing any of their quality.
+
+The chosen theme is \textit{Papirus} by Papirus Development Team \cite{papirus}, licensed under \textit{GPL-3.0} \cite{gpl3}.
+Following the license's terms, $\mu$MPS3's one has been upgraded from the original GPLv2 to the new GPLv3 too.
+
+All the other non-available icons were obtained from similar existing ones with the \textit{Inkscape} \cite{inkscape} software, following the same graphic style for the best eye pleasure possible.
+With the same procedure, the new $\mu$MPS' logo has been created [\autoref{fig:umps3_logo}].
+The font used for the central letter ``$\mu$'' is \textit{Ubuntu Monospace} from Canonical \cite{ubuntu_mono}.
+\begin{figure}[h]
+	\centering
+	\includegraphics[scale=2]{umps3}
+	\caption{$\mu$MPS3 Logo}
+	\label{fig:umps3_logo}
+\end{figure}
+
+\subsection{Other Improvements}
+There have been other small changes in the emulator's front-end, intending to improve the user experience as much as possible.
+
+The ``\textit{Edit configuration}'' menu entry has been moved from the ``Machine'' menu voice to the ``Simulator'' one, in a more intuitive position [\autoref{fig:edit_configuration}].
+\clearpage
+\begin{figure}[h]
+	\centering
+	\begin{subfigure}[h]{\textwidth}
+		\centering
+		\includegraphics[scale=0.75]{edit_configuration_old}
+		\caption{$\mu$MPS2}
+		\label{fig:edit_configuration_old}
+	\end{subfigure}
+	\newline
+	\begin{subfigure}[h]{\textwidth}
+		\centering
+		\includegraphics[scale=0.75]{edit_configuration}
+		\caption{$\mu$MPS3}
+		\label{fig:edit_configuration_new}
+	\end{subfigure}
+	\caption{Edit Configuration Menu Entry}
+	\label{fig:edit_configuration}
+\end{figure}
+
+A ``\textit{Clean recent}'' option has been added, a underestimated, yet still useful, function offering the possibility to remove all the used machine's configurations from the ``Recent menu'' [\autoref{fig:clear_recent}].
+Previously, the only way to do it was by manually editing \texttt{$\sim$/.config/umps3/umps.conf}, not a very practical method to maintain a clean emulator's view.
+\begin{figure}[h]
+	\centering
+	\includegraphics[scale=0.75]{clear_recent}
+	\caption{Clear Recent Menu Entry}
+	\label{fig:clear_recent}
+\end{figure}
+
+\clearpage
+The ``\textit{Reset}'' shortcut has been made available in the processor's view too, a convenient option when debugging using only keyboard's keys, allowing the restart of the machine without the need to move between front-end's windows [\autoref{fig:reset}].
+\begin{figure}[h]
+	\centering
+	\includegraphics[scale=0.7]{reset}
+	\caption{Reset Shortcut}
+	\label{fig:reset}
+\end{figure}
+
+The \texttt{RAMTOP} machine's value is now available from the configuration's overview [\autoref{fig:ramtop}], increasing the transparency for the user of how $\mu$MPS' physical memory works [\autoref{chap:physical_memory}].
+\begin{figure}[h]
+	\centering
+	\includegraphics[scale=0.72]{ramtop}
+	\caption{\texttt{RAMTOP} value}
+	\label{fig:ramtop}
+\end{figure}
+
+
 \chapter{Linux Packaging}
 \lhead[\fancyplain{}{\bfseries\thepage}]{\fancyplain{}{\bfseries\rightmark}}
 \section{Debian Package}
@@ -909,6 +1054,26 @@ If you are reading this document there are high chances you are doing it on a de
 	T. Jonjic,
 	\textit{Design and Implementation of the $\mu$MPS2 Educational Emulator},
 	University of Bologna, 2012.
+
+	\bibitem{papirus}
+	Papirus Development Team,
+	\textit{Papirus Icon Theme for Linux},
+	\texttt{https://github.com/PapirusDevelopmentTeam/papirus-icon-theme}.
+
+	\bibitem{gpl3}
+	Free Software Foundation, Inc.,
+	\textit{GNU General Public License Version 3},
+	\texttt{https://www.gnu.org/licenses/gpl-3.0.en.html}.
+
+	\bibitem{inkscape}
+	Inkscape's Contributors,
+	\textit{The Inkscape Project},
+	\texttt{https://inkscape.org/}.
+
+	\bibitem{ubuntu_mono}
+	Canonical Ltd.,
+	\textit{Ubuntu font},
+	\texttt{https://design.ubuntu.com/font/}.
 
 \end{thebibliography}
 \end{document}
