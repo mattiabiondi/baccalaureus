@@ -101,7 +101,7 @@
 
 \section{Background}
 The study and the consequent implementation of how an operating system works is, by now, a long-established and consolidated practice in every Computer Science's curriculum.
-It is, actually, one of the crucial components of a computer and it is responsible of ensuring it's basic operations, by coordinating and managing the system's resources like processor, memory, devices and processes, thus allowing hardware and software to interface each other.
+It is, actually, one of the crucial components of a computer and it is responsible of ensuring its basic operations, by coordinating and managing the system's resources like processor, memory, devices and processes, thus allowing hardware and software to interface each other.
 
 This is probably the first real example of ``big project'' which students must experience, thanks to complex intercommunication system that has to exist between the different machine's components, and the study of it allows to comprehend the most common software engineering practices.
 
@@ -115,7 +115,7 @@ A potential solution to this problem is the adoption of a simplified computer sy
 \section{History of $\mu$MPS}
 $\mu$MPS is based on the machine emulator MPS \cite{mps}, designed and realized by Professor Renzo Davoli and one of his graduate students Mauro Morsiani, in the late 1990s at the University of Bologna.
 
-The initial purpose was to bring back to life the layout and implementation experience of an operating system through an educational emulator, which could be run on real hardware.
+The initial purpose was to bring back to life the layout and implementation experience of an operating system through an educational emulator, which could be run on a real hardware.
 This practice was already possible in the past years, when the processor's architecture studied were the same available on real machines, but it has gone lost through the years because of the high-speed development of new more complex technologies used on physical implementations.
 
 MPS was able to emulate the MIPS R3000 processor along with five other different device categories: disks, tapes, network adapters, printers and terminals.
@@ -128,13 +128,17 @@ The urge of simplification led to the creation of $\mu$MPS, virtually identical 
 The only other difference was the new novice-friendly graphical user interface, significantly improved again in 2011 by Tomislav Jonjic during the development of the first major revision of the emulator, $\mu$MPS2 \cite{umps2}, which also implemented the support to up to sixteen MIPS R3000-style processors.
 
 \section{$\mu$MPS3}
-More than ten years have passed since the first release of $\mu$MPS and as many have passed from the moment it has been developed into a consolidated educational tool in the two already acknowledged teaching courses.
+More than ten years have passed since the first release of $\mu$MPS and as many have passed from the moment it has been developed into a consolidated educational tool.
+At its peak, it was adopted by more than 50 institutions, proving its initial purpose had been achieved.
 
-As already mentioned, the students' observations during this period were essential to in-depth testing the $\mu$MPS emulator as a pedagogical tool, showing as a result that further changes were needed.
+Over time, this number has decreased, showing that a modernization of the tool was needed to get back the attention of new generations of OS instructors.
+The students' observations during this period of use were essential to understand which of these further changes were required to give $\mu$MPS a new life as a modern pedagogical tool.
+
 Some examples of these modifications would be the memory's structure and management system of both physical and virtual ones, a nuance probably still too complex and confusing, which could feel like a regression, since the attempt to simplify it has led to the removal of the VM bit.
 This was originally introduced in the first version of $\mu$MPS, as a distinctive feature from its predecessor MPS.
-On the other hand, other changes are related to the passage of the years, such as the replacement of memory tapes with flash drive devices, also know as ``USB sticks'' or ``SD cards''.
+Memory's segmentation has been eliminated too, since it is considered legacy in every modern architecture, making its implementation an unnecessary complication for the students.
 
+Other changes are related to the passage of the years too, such as the replacement of memory tapes with flash drive devices, also know as ``USB sticks'' or ``SD cards''.
 Tapes are probably still studied in their operation nowadays, but they cannot be found in today's practical contexts, and therefore it could be difficult to understand for the new generation of students, who can't find a match in current technological implementations.
 
 Another consequence of $\mu$MPS's modernization has been the shift from the historical and well established Autotools to a more modern building tool, CMake, that speeds up the compilation process in addition to simplify the project's structure.
@@ -144,9 +148,24 @@ These and more changes are collected together in a major release of the project,
 
 Due to implementation aspects---unlike his predecessor $\mu$MPS2---this new version is not backward compatible with older ones.
 
-\texttt{TODO: Debian Packaging}
-
 \section{Document's Structure}
+This thesis will focus primarily on the modifications made on the previous version of the emulator, their implementation and the reasons to do it.
+This document is not intended to be used as a substitute of the manual \textit{$\mu$MPS3 Principles of Operation} \cite{pops}, but only as an accompanying guide to understand how the two versions differ from each other.
+
+This first chapter aims to give a brief overview of why tools like $\mu$MPS are needed, its history to date and the considerations on why an update was needed.
+
+Chapter 2 and 3 will respectively describe the new memory management, as both physical and virtual ones have been updated, and the new exception handling, significantly renovated.
+Both current and previous implementations will be compared in every aspect.
+
+Chapter 4 will explain the advanced feature of the multiprocessor support.
+The CPUs initialization has been updated to comply with the new exception handling.
+
+Chapter 5 is an introduction of the new flash device, which takes over tapes.
+The reasons why this replacement was necessary are described in the first part of the chapter, while the rest of the chapter illustrates its creation and its usage.
+
+Chapter 6 is the less technical one, since it describes the migration from the older project's building tool to the new one, and the renewal of the graphical user interface.
+
+Finally, chapter 7 \texttt{TODO}.
 
 \chapter{Memory Management}
 \lhead[\fancyplain{}{\bfseries\thepage}]{\fancyplain{}{\bfseries\rightmark}}
@@ -157,7 +176,7 @@ The main reasons for the modifications made are the further simplification of th
 
 \section{Physical Memory}
 \label{chap:physical_memory}
-The physical address space is divided into two big areas [\autoref{fig:physical_memory}]: a \textit{kernel reserved space}, from address \texttt{0x0000.0000} to \texttt{0x2000.0000}, and the \textit{installed RAM}, from address \texttt{0x2000.0000} (\texttt{RAMBASE}) to \texttt{RAMTOP}.
+The physical address space is divided into two big areas [\autoref{fig:physical_memory}]: a \textit{BIOS reserved space}, from address \texttt{0x0000.0000} to \texttt{0x2000.0000}, and the \textit{installed RAM}, from address \texttt{0x2000.0000} (\texttt{RAMBASE}) to \texttt{RAMTOP}.
 
 This last value is calculated upon the one retrieved from the configuration file, settable from the machine's configuration dialog in the front-end emulator, which goes from a minimum of 8 to a maximum of 512 memory frames.
 Being the size of each frame 4 kilobyte, $\mu$MPS3 can have from 32KB up to 2MB of installed RAM.
@@ -165,30 +184,35 @@ Hence, the value of \texttt{RAMTOP} range from \texttt{0x2000.8000} to \texttt{0
 
 \begin{figure}[ht]
 	\centering
+	\renewcommand{\arraystretch}{0.8}
 	\begin{tabular}{cl}
-		                                                             & \multirow{2}{*}{\texttt{0xFFFF.FFFF}} \\ \cline{1-1}
-		\multicolumn{1}{|c|}{\multirow{2}{*}{\cellcolor{gray}}}      &                                       \\ [-1ex]
-		\multicolumn{1}{|c|}{\cellcolor{gray}}                       & \multirow{2}{*}{\texttt{RAMTOP}}      \\ \cline{1-1}
-		\multicolumn{1}{|c|}{\multirow{4}{*}{installed RAM}}         &                                       \\
-		\multicolumn{1}{|c|}{}                                       &                                       \\
-		\multicolumn{1}{|c|}{}                                       &                                       \\
-		\multicolumn{1}{|c|}{}                                       & \multirow{2}{*}{\texttt{0x2000.0000}} \\ \cline{1-1}
-		\multicolumn{1}{|c|}{\multirow{2}{*}{kernel reserved space}} &                                       \\
-		\multicolumn{1}{|c|}{}                                       & \multirow{2}{*}{\texttt{0x0000.0000}} \\ \cline{1-1}
-		\multicolumn{1}{l}{}                                         &
+		                                                           & \multirow{2}{*}{\texttt{0xFFFF.FFFF}} \\ \cline{1-1}
+		\multicolumn{1}{|c|}{\multirow{2}{*}{\cellcolor{gray}}}    &                                       \\ [-1ex]
+		\multicolumn{1}{|c|}{\cellcolor{gray}}                     & \multirow{2}{*}{\texttt{RAMTOP}}      \\ \cline{1-1}
+		\multicolumn{1}{|c|}{\multirow{4}{*}{installed RAM}}       &                                       \\
+		\multicolumn{1}{|c|}{}                                     &                                       \\
+		\multicolumn{1}{|c|}{}                                     &                                       \\
+		\multicolumn{1}{|c|}{}                                     & \multirow{2}{*}{\texttt{0x2000.0000}} \\ \cline{1-1}
+		\multicolumn{1}{|c|}{\multirow{2}{*}{BIOS reserved space}} &                                       \\
+		\multicolumn{1}{|c|}{}                                     & \multirow{2}{*}{\texttt{0x0000.0000}} \\ \cline{1-1}
+		\multicolumn{1}{l}{}                                       &
 	\end{tabular}
 	\caption{Physical Memory}
 	\label{fig:physical_memory}
 \end{figure}
 
-\subsection{Kernel Reserved Space}
-\label{chap:kernel_reserved_space}
+\subsection{BIOS Reserved Space}
+\label{chap:bios_reserved_space}
 The first memory's big area [\autoref{fig:kernel_reserved_space}] is reserved for:
 \begin{itemize}
 	\item the Execution ROM code, which lays in a read-only segment from address \texttt{0x0000.0000} to \texttt{ROMTOP}. This latter value is calculated upon the size of the Execution ROM;
-	\item the BIOS Data Page, from address \texttt{0x0FFF.F000} (\texttt{BIOSDATABASE}) to \texttt{0x1000.0000}. This is a new area that has been implemented in a $\mu$MPS2's unused memory space.
-	      See \autoref{chap:bios_data_page} for more information regarding this read/writable area segment;
-	\item the Bus Register Area, from address \texttt{0x1000.0000} to \texttt{0x1000.002C}: a 11 words area that will be described later in \autoref{chap:tlb_floor_address};
+	\item the BIOS Data Page, from address \texttt{0x0FFF.F000} (\texttt{BIOSDATABASE}) to \texttt{0x1000.0000}.
+	      This is the same 4KB area that was used to be called ``ROM Reserved Frame'' [\autoref{chap:rom_reserved_frame}] in $\mu$MPS2, which has been renamed and moved.
+	      It still, however, serves as interface between the ROM's handlers [\autoref{chap:rom_exception_handlers}] and the user-implemented kernel.
+	      See \autoref{chap:bios_data_page} for more information regarding how this read/writable area segment has been updated;
+	\item the Bus Register Area, from address \texttt{0x1000.0000} to \texttt{0x1000.002C}: a 11 words area that contains various fields used in $\mu$MPS3's lifetime cycle to properly work.
+	      Some of them are read-only and calculated at boot/reset time, while others are read/writable.
+	      See \texttt{TODO} of \cite{pops} for more information regarding this area;
 	\item the Installed Devices Bit Map, from address \texttt{0x1000.002C} to \\ \texttt{0x1000.0040}: a read-only five words area that indicates which devices are actually installed and where [\texttt{TODO} of \cite{pops}];
 	\item the Interrupting Devices Bit Map, from address \texttt{0x1000.0040} to \\ \texttt{0x1000.0054}: a read-only five words area that indicates which devices have an interrupt pending [\texttt{TODO} of \cite{pops}];
 	\item the Devices' Registers Area, from address \texttt{0x1000.0054} to \texttt{0x1000.02D4} (\texttt{DEVTOP}): a 160 words area (number of interrupt lines (8) $\times$ devices per interrupt line (5) $\times$  words per register (4)). See \texttt{TODO} of \cite{pops} for more information, or \autoref{tab:device_register_layout} for an example of one device's register;
@@ -196,7 +220,7 @@ The first memory's big area [\autoref{fig:kernel_reserved_space}] is reserved fo
 \end{itemize}
 \begin{figure}[ht]
 	\centering
-	\renewcommand{\arraystretch}{0.95}
+	\renewcommand{\arraystretch}{0.9}
 	\begin{tabular}{cl}
 		\multicolumn{1}{l}{}                                                & \multirow{2}{*}{\texttt{0x2000.0000}} \\ \cline{1-1}
 		\multicolumn{1}{|l|}{\cellcolor{gray}}                              &                                       \\ [-3ex]
@@ -221,7 +245,7 @@ The first memory's big area [\autoref{fig:kernel_reserved_space}] is reserved fo
 		\multicolumn{1}{|c|}{}                                              & \multirow{2}{*}{\texttt{0x0000.0000}} \\ \cline{1-1}
 		\multicolumn{1}{l}{}                                                &
 	\end{tabular}
-	\caption{Kernel Reserved Space's Structure}
+	\caption{BIOS Reserved Space's Structure}
 	\label{fig:kernel_reserved_space}
 \end{figure}
 Any attempt to access an undefined memory area (\texttt{ROMTOP...0x0FFF.F000}, \texttt{DEVTOP...0x1FC0.0000}, \texttt{BOOTTOP...0x2000.0000}) will generate a \textit{Bus Error exception} [\autoref{chap:exception_handling}].
@@ -236,116 +260,117 @@ The 2MB graphical user interface limitation is imposed because, while it seems a
 This area will hold:
 \begin{itemize}
 	\item the operating system's code (\textit{text}), global variables/structures (\textit{data}), and stack(s);
-	\item The user processes' \textit{text}, \textit{data} and stacks.
+	\item enough space for the ``frame pool'' to be used for user processes' \textit{text}, \textit{data} and stacks during virtual memory management.
 \end{itemize}
 As for the previous big area, any attempt to access the undefined memory area that lays from \texttt{RAMTOP} up to \texttt{0xFFFF.FFFF} will generate a Bus Error exception.
 
 \section{Virtual Memory}
-The virtual memory subsystem is implemented through a segmented-paged scheme.
-Hence, a new abstraction layer is laid on the whole physical memory structure, subdividing it into four big segments [\autoref{fig:new_segments}]:
+While the physical one is divided into two big areas, the virtual memory subsystem is logically split into four units [\autoref{fig:virtual_memory}]:
 \begin{itemize}
-	\item \textit{kseg0}, from address \texttt{0x0000.0000} to \texttt{0x2000.0000}: a 0.5GB segment reserved for the Kernel Reserved Space [\autoref{chap:kernel_reserved_space}];
-	\item \textit{kseg1}, from address \texttt{0x2000.0000} to \texttt{0x4000.0000}: a 0.5GB segment reserved for OS \textit{text}, \textit{data} and stacks;
-	\item \textit{kseg2}, from address \texttt{0x4000.0000} to \texttt{0x8000.0000}: a 1GB segment reserved for OS \textit{text}, \textit{data} and stacks;
-	\item \textit{kuseg}, from address \texttt{0x8000.0000} to \texttt{0xFFFF.FFFF}: a 2GB segment reserved for user processes' \textit{text}, \textit{data} and stacks;
+	\item \textit{kseg0}, from address \texttt{0x0000.0000} to \texttt{0x2000.0000}: a 0.5GB address space dedicated to the BIOS Reserved Space [\autoref{chap:bios_reserved_space}];
+	\item \textit{kseg1}, from address \texttt{0x2000.0000} to \texttt{0x4000.0000}: a 0.5GB address space dedicated to OS \textit{text}, \textit{data} and stacks;
+	\item \textit{kseg2}, from address \texttt{0x4000.0000} to \texttt{0x8000.0000}: a 1GB address space dedicated to OS \textit{text}, \textit{data} and stacks;
+	\item \textit{kuseg}, from address \texttt{0x8000.0000} to \texttt{0xFFFF.FFFF}: a 2GB address space dedicated to user processes' \textit{text}, \textit{data} and stacks;
 \end{itemize}
-This subdivision differs from $\mu$MPS2's one, as it was divided in three different segments [\autoref{fig:old_segments}]:
+
+\begin{figure}[h]
+	\centering
+	\renewcommand{\arraystretch}{0.66}
+	\begin{tabular}{cl}
+		\multicolumn{1}{m{3cm}}{}                    & \multirow{2}{*}{\texttt{0xFFFF.FFFF}} \\ \cline{1-1}
+		\multicolumn{1}{|c|}{\multirow{4}{*}{kuseg}} &                                       \\
+		\multicolumn{1}{|c|}{}                       & \multirow{2}{*}{}                     \\
+		\multicolumn{1}{|c|}{}                       &                                       \\
+		\multicolumn{1}{|c|}{}                       & \multirow{2}{*}{\texttt{0x8000.0000}} \\ \cline{1-1}
+		\multicolumn{1}{|c|}{\multirow{4}{*}{kseg2}} &                                       \\
+		\multicolumn{1}{|c|}{}                       & \multirow{2}{*}{}                     \\
+		\multicolumn{1}{|c|}{}                       &                                       \\
+		\multicolumn{1}{|c|}{}                       & \multirow{2}{*}{\texttt{0x4000.0000}} \\ \cline{1-1}
+		\multicolumn{1}{|c|}{\multirow{2}{*}{kseg1}} &                                       \\
+		\multicolumn{1}{|c|}{}                       & \multirow{2}{*}{\texttt{0x2000.0000}} \\ \cline{1-1}
+		\multicolumn{1}{|c|}{\multirow{2}{*}{kseg0}} &                                       \\
+		\multicolumn{1}{|c|}{}                       & \multirow{2}{*}{\texttt{0x0000.0000}} \\ \cline{1-1}
+		\multicolumn{1}{l}{}                         &
+	\end{tabular}
+	\caption{Virtual Memory Structure}
+	\label{fig:virtual_memory}
+\end{figure}
+Despite their name, these four sections are not real segments, since memory's segmentation has been removed in $\mu$MPS3.
+However, they are called like this for traditional reasons, as their size and their label are the same of the areas from the original MIPS' address space.
+
+The first 2GB of physical memory, corresponding to all the addresses below \texttt{0x8000.0000}, are reserved only to kernel-mode access, therefore, any attempt to access them while the processor is in user-mode will cause the raising of an \textit{Address Error} [\autoref{chap:exception_handling}].
+
+The other half of memory is dedicated to user processes, and each one ``sees'' his own virtual version.
+One process' kuseg is separated from another process' one by a unique number called \textit{ASID} (Address Space Identifier) [\texttt{TODO} of \cite{pops}].
+
+\subsection{TLB Floor Address}
+\label{chap:tlb_floor_address}
+The \textit{TLB Floor Address} is a new parameter implemented in $\mu$MPS3, responsible for indicating which addresses from a certain value on are considered virtual, and therefore subject to \textit{virtual address translation}---the process to associate a non-accessible address to a physical one.
+By doing this, instead of the actual physical memory available, the processes perceive an abstract view of the address space.
+
+This parameter can be chosen directly from the configuration dialog in the emulator's front-end, as Figure \ref{fig:tlb_floor_address} shows:
+\begin{figure}[h]
+	\centering
+	\includegraphics[scale=0.68]{tlb_floor_address}
+	\caption{TLB Floor Address}
+	\label{fig:tlb_floor_address}
+\end{figure}
+
+The last option, \texttt{VM OFF}, is internally declared as \texttt{0xFFFF.FFFF}: since it is not possible to access to an address above this value, the entire physical memory is necessarily below it, and therefore, an address translation could never happen.
+
+\section{Previous Implementation}
+The physical address space was substantially equal to the new one, except for the moving and renaming of the new ``BIOS Data Page''.
+
+On the other hand, the virtual memory was implemented through a segmented-paged scheme.
+Hence, a new abstraction layer was laid on the whole physical memory structure, subdividing it into three big segments [\autoref{fig:old_virtual_memory}]:
 \begin{itemize}
-	\item \textit{ksegOS}, from address \texttt{0x0000.0000} to \texttt{0x8000.0000}: a 2GB segment reserved for OS \textit{text}, \textit{data} and stacks, along with all the structures that sit in the kernel reserved space up to address \texttt{0x2000.0000};
+	\item \textit{ksegOS}, from address \texttt{0x0000.0000} to \texttt{0x8000.0000}: a 2GB segment reserved for OS \textit{text}, \textit{data} and stacks, along with all the structures that sit in the BIOS reserved space up to address \texttt{0x2000.0000};
 	\item \textit{kUseg2}, from address \texttt{0x8000.0000} to \texttt{0xC000.0000}: a 1GB virtual address space reserved for user processes' \textit{text}, \textit{data} and stacks;
 	\item \textit{kUseg3}, from address \texttt{0xC000.0000} to \texttt{0xFFFF.FFFF}: another 1GB virtual address space reserved for the use of user-mode processes.
 \end{itemize}
 
 \begin{figure}[h]
 	\centering
-	\begin{subfigure}[b]{0.4\textwidth}
-		\renewcommand{\arraystretch}{0.66}
-		\begin{tabular}{cl}
-			\multicolumn{1}{m{3cm}}{}                     & \multirow{2}{*}{\texttt{0xFFFF.FFFF}} \\ \cline{1-1}
-			\multicolumn{1}{|c|}{\multirow{2}{*}{kUseg3}} &                                       \\
-			\multicolumn{1}{|c|}{}                        & \multirow{2}{*}{\texttt{0xC000.0000}} \\ \cline{1-1}
-			\multicolumn{1}{|c|}{\multirow{2}{*}{kUseg2}} &                                       \\
-			\multicolumn{1}{|c|}{}                        & \multirow{2}{*}{\texttt{0x8000.0000}} \\ \cline{1-1}
-			\multicolumn{1}{|c|}{\multirow{8}{*}{ksegOS}} &                                       \\
-			\multicolumn{1}{|c|}{}                        & \multirow{2}{*}{}                     \\
-			\multicolumn{1}{|c|}{}                        &                                       \\
-			\multicolumn{1}{|c|}{}                        & \multirow{2}{*}{}                     \\
-			\multicolumn{1}{|c|}{}                        &                                       \\
-			\multicolumn{1}{|c|}{}                        & \multirow{2}{*}{}                     \\
-			\multicolumn{1}{|c|}{}                        &                                       \\
-			\multicolumn{1}{|c|}{}                        & \multirow{2}{*}{\texttt{0x0000.0000}} \\ \cline{1-1}
-			\multicolumn{1}{l}{}                          &
-		\end{tabular}
-		\caption{Old Segments}
-		\label{fig:old_segments}
-	\end{subfigure}
-	\qquad
-	\qquad
-	\begin{subfigure}[b]{0.4\textwidth}
-		\renewcommand{\arraystretch}{0.66}
-		\begin{tabular}{cl}
-			\multicolumn{1}{m{3cm}}{}                    & \multirow{2}{*}{\texttt{0xFFFF.FFFF}} \\ \cline{1-1}
-			\multicolumn{1}{|c|}{\multirow{4}{*}{kuseg}} &                                       \\
-			\multicolumn{1}{|c|}{}                       & \multirow{2}{*}{}                     \\
-			\multicolumn{1}{|c|}{}                       &                                       \\
-			\multicolumn{1}{|c|}{}                       & \multirow{2}{*}{\texttt{0x8000.0000}} \\ \cline{1-1}
-			\multicolumn{1}{|c|}{\multirow{4}{*}{kseg2}} &                                       \\
-			\multicolumn{1}{|c|}{}                       & \multirow{2}{*}{}                     \\
-			\multicolumn{1}{|c|}{}                       &                                       \\
-			\multicolumn{1}{|c|}{}                       & \multirow{2}{*}{\texttt{0x4000.0000}} \\ \cline{1-1}
-			\multicolumn{1}{|c|}{\multirow{2}{*}{kseg1}} &                                       \\
-			\multicolumn{1}{|c|}{}                       & \multirow{2}{*}{\texttt{0x2000.0000}} \\ \cline{1-1}
-			\multicolumn{1}{|c|}{\multirow{2}{*}{kseg0}} &                                       \\
-			\multicolumn{1}{|c|}{}                       & \multirow{2}{*}{\texttt{0x0000.0000}} \\ \cline{1-1}
-			\multicolumn{1}{l}{}                         &
-		\end{tabular}
-		\caption{New Segments}
-		\label{fig:new_segments}
-	\end{subfigure}
-	\caption{Virtual Address Space}
-	\label{fig:virtual_address_space}
+	\begin{tabular}{cl}
+		\multicolumn{1}{m{3cm}}{}                     & \multirow{2}{*}{\texttt{0xFFFF.FFFF}} \\ \cline{1-1}
+		\multicolumn{1}{|c|}{\multirow{2}{*}{kUseg3}} &                                       \\
+		\multicolumn{1}{|c|}{}                        & \multirow{2}{*}{\texttt{0xC000.0000}} \\ \cline{1-1}
+		\multicolumn{1}{|c|}{\multirow{2}{*}{kUseg2}} &                                       \\
+		\multicolumn{1}{|c|}{}                        & \multirow{2}{*}{\texttt{0x8000.0000}} \\ \cline{1-1}
+		\multicolumn{1}{|c|}{\multirow{4}{*}{ksegOS}} &                                       \\
+		\multicolumn{1}{|c|}{}                        & \multirow{4}{*}{}                     \\
+		\multicolumn{1}{|c|}{}                        &                                       \\
+		\multicolumn{1}{|c|}{}                        & \multirow{2}{*}{\texttt{0x0000.0000}} \\ \cline{1-1}
+		\multicolumn{1}{l}{}                          &
+	\end{tabular}
+	\caption{Old Virtual Memory Structure}
+	\label{fig:old_virtual_memory}
 \end{figure}
 
-The first 2GB of physical memory, corresponding to all the addresses below \texttt{0x8000.0000}, were and are reserved only to kernel-mode access, therefore, any attempt to access them while the processor is in user-mode will cause the raising of an \textit{Address Error} [\autoref{chap:exception_handling}].
+As for the new version, all the addresses below \texttt{0x8000.0000} were reserved to kernel-mode access only.
 
-The other half of memory is, now, dedicated to user processes, and each one ``sees'' his own virtual version.
-One process' kuseg is separated from another process' one by a unique number called \textit{ASID} (Address Space Identifier) [\texttt{TODO} of \cite{pops}].
-
-In previous versions, wether this subdivision was active or not, it was controlled by the \textit{VM bit}.
+Wether this subdivision was active or not, it was controlled by the \textit{VM bit}.
 With the VM bit off, no particular actions were required when accessing the memory space.
-Instead, when the VM bit was on, all the address above \texttt{0x2000.0000} were considered virtual, and therefore subject to \textit{virtual address translation}---the process to associate a non-accessible address to a physical one.
-By doing this, instead of the actual physical memory available, the processes perceive an abstract view of the address space.
+Instead, when the VM bit was on, all the address above \texttt{0x2000.0000} were considered virtual.
 
-The virtual address translation process went through a significant change in this major revision: the formal segment table and page table formats [subsections 4.3.1 and 4.3.2 of \cite{old_pops}], introduced in the first implementation of $\mu$MPS, have been removed, resulting in a simpler procedure for the users [\texttt{TODO} of \cite{pops}].
-
-During the implementation of a new emulator's feature, the VM bit has been completely removed too.
-
-\subsection{VM Bit Removal}
-\label{chap:vm_bit_removal}
 The VM bit was originally introduced in the first version of $\mu$MPS, with the intent of simplifying the complex virtual memory management system of the MIPS R3000 microprocessor.
 The activation and deactivation of it was accomplished through the system control coprocessor \textit{CP0}.
 
 It provides a 32-bit \textit{Status} register that controls various aspects of the emulator, described in details at \texttt{TODO} of \cite{pops}.
 Along with the current register's options set, it also provided the possibility, by using bitwise operations, to control the VM bit's status: it was implemented as a 3-slot deep bit stack (current, previous, previous of previous) which was pushed or popped depending on whether an exception was raised or an interrupted execution stream was restarted [section 3.2 and subsection 6.2.1 of \cite{old_pops}].
 
+The virtual address translation process went through a significant change in this major revision: the formal segment table [subsections 4.3.1 of \cite{old_pops}], introduced in the first implementation of $\mu$MPS, have been removed.
+Consequently, only page table formats remain implemented, permitting to align the whole virtual memory management system to the modern technique of \textit{Memory Paging}.
+This also results in a simpler procedure for the users [\texttt{TODO} of \cite{pops}].
+
+During the implementation of a new emulator's feature, the VM bit has been completely removed too.
+
+\section{VM Bit Removal}
+\label{chap:vm_bit_removal}
 The VM bit removal is one of $\mu$MPS3's main features: the push/pop system has been removed, and the three bits that were reserved for it are now completely ignored.
-Hence, from now on, the virtual memory is conceptually \textbf{always on}.
+Hence, from now on, the virtual memory is conceptually always on.
 This means that all the addresses above a certain value are considered virtual and therefore, subject to virtual address translation.
-This specific value, while in previous version was fixed at \texttt{0x2000.0000}, is now contained in a variable called \textit{TLB Floor Address}
-
-\subsection{TLB Floor Address}
-\label{chap:tlb_floor_address}
-The TLB Floor Address is a new parameter implemented in $\mu$MPS3, responsible for indicating which addresses from a certain value on are considered virtual.
-
-This parameter can be chosen directly from the configuration dialog in the emulator's front-end, as Figure \ref{fig:tlb_floor_address} shows:
-\begin{figure}[h]
-	\centering
-	\includegraphics[scale=0.73]{tlb_floor_address}
-	\caption{TLB Floor Address}
-	\label{fig:tlb_floor_address}
-\end{figure}
-
-The last option, \texttt{VM OFF}, is internally declared as \texttt{0xFFFF.FFFF}: since it is not possible to access to an address above this value, the entire physical memory is necessarily below it, and therefore, an address translation could never happen.
+This specific value, while in previous version was fixed at \texttt{0x2000.0000}, is now contained in a variable called TLB Floor Address [\autoref{chap:tlb_floor_address}].
 
 The TLB Floor Address value is stored in the Bus Register Area, thereby adding one word to the ten words area of the previous version [\autoref{tab:bus_register_area}]:
 \begin{table}[h]
@@ -354,29 +379,27 @@ The TLB Floor Address value is stored in the Bus Register Area, thereby adding o
 	\begin{tabular}{|c|c|}
 		\hline
 		Physical Address     & Field Name                          \\ \hline\hline
-		\texttt{0x1000.0000} & RAM Base Physical Address           \\ \hline
-		\texttt{0x1000.0004} & Installed RAM Size                  \\ \hline
-		\texttt{0x1000.0008} & Exec. ROM Base Physical Address     \\ \hline
-		\texttt{0x1000.000C} & Installed Exec. ROM Size            \\ \hline
-		\texttt{0x1000.0010} & Bootstrap ROM Base Physical Address \\ \hline
-		\texttt{0x1000.0014} & Installed Bootstrap ROM Size        \\ \hline
-		\texttt{0x1000.0018} & Time of Day Clock - High            \\ \hline
-		\texttt{0x1000.001C} & Time of Day Clock - Low             \\ \hline
-		\texttt{0x1000.0020} & Interval Timer                      \\ \hline
+		\texttt{0x1000.0028} & TLB Floor Address                   \\ \hline
 		\texttt{0x1000.0024} & Time Scale                          \\ \hline
-		\texttt{0x1000.0028} & \textbf{TLB Floor Address}          \\ \hline
+		\texttt{0x1000.0020} & Interval Timer                      \\ \hline
+		\texttt{0x1000.001C} & Time of Day Clock - Low             \\ \hline
+		\texttt{0x1000.0018} & Time of Day Clock - High            \\ \hline
+		\texttt{0x1000.0014} & Installed Bootstrap ROM Size        \\ \hline
+		\texttt{0x1000.0010} & Bootstrap ROM Base Physical Address \\ \hline
+		\texttt{0x1000.000C} & Installed Exec. ROM Size            \\ \hline
+		\texttt{0x1000.0008} & Exec. ROM Base Physical Address     \\ \hline
+		\texttt{0x1000.0004} & Installed RAM Size                  \\ \hline
+		\texttt{0x1000.0000} & RAM Base Physical Address           \\ \hline
 	\end{tabular}
 	\caption{Bus Register Area}
 	\label{tab:bus_register_area}
 \end{table}
 
-This area contains various fields used in $\mu$MPS3's lifetime cycle to properly work.
-Some of them are read-only and calculated at boot/reset time, while others are read/writable.
-See \texttt{TODO} of \cite{pops} for more information regarding this area.
+One of the consequences of the implementation of this value at the end of the Bus Register Area has been the shifting up of one word of the two successive areas, Installed Devices Bit Map and Interrupting Devices Bit Map.
 
 The TLB Floor Address's field cannot be changed while the emulator is running, but only from the front-end dialog.
 
-After saving the machine's configuration from the front-end dialog, the TLB Floor Address's value will be placed inside the JSON-based configuration's file, described in detail in subsection 4.2.1 of Jonjic's Thesis \cite{tjonjic}.
+After saving the machine's configuration from the GUI, the TLB Floor Address's value will be placed inside the JSON-based configuration's file, described in detail in subsection 4.2.1 of Jonjic's Thesis \cite{tjonjic}.
 
 An example of the final portion of a simple machine's configuration is represented in Listing \ref{lst:tlb_floor_adress}:
 \begin{lstlisting}[language=json,firstnumber=19,caption={TLB Floor Address},captionpos=b,label={lst:tlb_floor_adress}]
@@ -388,8 +411,6 @@ An example of the final portion of a simple machine's configuration is represent
   \end{lstlisting}
 On line 21 is shown the value saved as \textit{string}: this decision was taken to preserve the human-readable notational convention, used across all $\mu$MPS3's environment, consisting of addresses written in hexadecimal base, preceded by the ``\texttt{0x}'' prefix.
 
-One of the consequences of the implementation of this value at the end of the Bus Register Area has been the shifting up of one word of the two successive areas, Installed Devices Bit Map and Interrupting Devices Bit Map.
-
 \chapter{Exception Handling}
 \label{chap:exception_handling}
 \lhead[\fancyplain{}{\bfseries\thepage}]{\fancyplain{}{\bfseries\rightmark}}
@@ -397,12 +418,14 @@ Exceptions are particular events that interrupt a machine's normal flow of execu
 Different categories of them exist, each one raised in correspondence of a certain occurrence.
 Depending on their type, the exceptions require to be handled in a distinct special way rather than with the ordinary system's workflow.
 
-$\mu$MPS3 supports four different types of exceptions:
+From a hardware perspective, $\mu$MPS3 supports two major types of exceptions: \textit{TLB-Refill} exceptions, and all the other ones.
+However, from the software viewpoint, thanks to a higher level abstraction, they could be subdivided in four different categories:
 \begin{itemize}
 	\item \textit{Program Traps}: these exceptions are usually raised when the user-defined workflow commits an error, like: \textit{Address Error}, \textit{Bus Error}, \textit{Reserved Instruction}, \textit{Coprocessor Unusable} or \textit{Arithmetic Overflow};
 	\item \textit{System Calls and Breakpoints}: these two occur whenever a process request an OS service through the \texttt{SYSCALL} or the \texttt{BREAK} instruction;
-	\item \textit{Interrupts}: I/O devices that complete their previously started operation must notify it to the processor, and they do it by raising this type of exception. There are a total of 8 interrupt lines: 3 of them are dedicated to internally generated interrupts, while the other 5 to external devices. Each of these last five ones support up to 8 devices attached to them;
-	\item \textit{TLB-related exceptions}: exceptions linked to the \textit{Translation Lookaside Buffer}: \textit{TLB-Modification}, \textit{TLB-Invalid} and \textit{TLB-Refill}.
+	\item \textit{Interrupts}: I/O devices that complete their previously started operation must notify it to the processor, and they do it by raising this type of exception. There are a total of 8 interrupt lines: 3 of them are dedicated to internally generated interrupts, while the other 5 to external devices.
+	      Each of these last five ones support up to 8 devices attached to them;
+	\item \textit{TLB-related exceptions}: exceptions linked to the \textit{Translation Lookaside Buffer}: \textit{TLB-Modification}, \textit{TLB-Invalid} and TLB-Refill.
 \end{itemize}
 
 Going more in details on Program Traps, from \texttt{TODO} of \cite{pops}:
@@ -424,9 +447,10 @@ Going more in details on Program Traps, from \texttt{TODO} of \cite{pops}:
 The TLB (Translation Lookaside Buffer) is a Virtual Memory management system's component whose functioning has not changed since last $\mu$MPS' version.
 However, its exception handling did, and, therefore, a little background is needed to explain the modifications made. From \texttt{TODO} of \cite{pops}:
 \begin{quote}
-	The TLB is an \textit{associative cache}, that can hold from 4 to 64 TLB entries.
+	The TLB is a theoretical \textit{associative cache}, that can hold from 4 to 64 TLB entries.
 	Each TLB entry describes the mapping between one ASID–virtual page number pairing and a physical frame number/location in RAM.
-	By utilizing a cache of recently used TLB entries, $\mu$MPS3's virtual address translation mechanism can avoid making multiple memory accesses for each translation by linearly searching the TLB for a matching entry.
+	By utilizing a cache of recently used TLB entries, $\mu$MPS3's virtual address translation mechanism can avoid making multiple memory accesses for each translation.
+	Since it is impossible to realistically emulate this kind of implemention, it is therefore linearly searched.
 \end{quote}
 
 Hence, regarding its exceptions, from \texttt{TODO} of \cite{pops}:
@@ -439,6 +463,7 @@ Hence, regarding its exceptions, from \texttt{TODO} of \cite{pops}:
 \end{quote}
 
 \section{Processor Actions on Exception}
+\label{chap:processor_actions_on_exceptions}
 When an exception is raised, the processor's state (what it was ``doing'') must be saved in order to restart from that point after the exception has been handled.
 Before doing this, the processor has to take a number of atomic actions (non-interruptible, without any visible intermediary state).
 Some fundamental steps are, then:
@@ -446,110 +471,11 @@ Some fundamental steps are, then:
 	\item disabling all interrupts, to make sure nothing could disturb the entire handling process;
 	\item activating the kernel-mode, since the access to the memory area intended for saving (and retrieving) the processor's state is denied to user-mode processes.
 \end{itemize}
-In addition to these, another step to disable the virtual memory was taken in $\mu$MPS' previous versions, since the processor's state reserved area was above the address \texttt{0x2000.0000}.
-With the virtual memory bit enabled, those addresses were considered virtual, leading to possible raises of TLB-management exceptions, which would have meant entering in an \textit{infinite loop}.
-However, as explained in \autoref{chap:vm_bit_removal}, this has been completely removed in $\mu$MPS3.
 
 Other essential processor actions are taken, some of them based on the type of the exception.
 They remain unchanged from $\mu$MPS2, and explained in detail in \texttt{TODO} of \cite{pops}.
-This chapter will focus on the differences between the two versions and the modifications made.
 
-\section{Previous Implementation}
-The exception handling of $\mu$MPS' previous versions was managed by distinguishing them by their type: Program Traps, System Calls and Breakpoints, Interrupts and TLB-related exceptions.
-
-Since this subdivision existed, four different areas were needed to save the processor's state (called \textit{old areas}), and other four to retrieve the state to be loaded (called \textit{new areas}), which contained the address of the exception's handler.
-These four pair of areas, each one linked to its specific exception's type, were stored in a 35 (state's size) $\times$ 8 words area [\autoref{fig:old_new_state_areas}] at the beginning of the so-called \textit{ROM Reserved Frame} [\autoref{fig:rom_reserved_frame}].
-
-\subsection{ROM Reserved Frame}
-\begin{figure}[h]
-	\centering
-	\begin{subfigure}[b]{0.4\textwidth}
-		\renewcommand{\arraystretch}{0.83}
-		\begin{tabular}{cl}
-			\multicolumn{1}{l}{}                                                  & \multirow{2}{*}{\texttt{0x2000.0460}} \\ \cline{1-1}
-			\multicolumn{1}{|c|}{\multirow{2}{*}{\begin{tabular}[c]{@{}c@{}}Syscalls and Breakpoints\\ (new area)\end{tabular}}} &                                       \\
-			\multicolumn{1}{|c|}{}                                                & \multirow{2}{*}{\texttt{0x2000.03D4}} \\ \cline{1-1}
-			\multicolumn{1}{|c|}{\multirow{2}{*}{\begin{tabular}[c]{@{}c@{}}Syscalls and Breakpoints\\ (old area)\end{tabular}}} &                                       \\
-			\multicolumn{1}{|c|}{}                                                & \multirow{2}{*}{\texttt{0x2000.0348}} \\ \cline{1-1}
-			\multicolumn{1}{|c|}{\multirow{2}{*}{\begin{tabular}[c]{@{}c@{}}Program Traps\\ (new area)\end{tabular}}} &                                       \\
-			\multicolumn{1}{|c|}{}                                                & \multirow{2}{*}{\texttt{0x2000.02BC}} \\ \cline{1-1}
-			\multicolumn{1}{|c|}{\multirow{2}{*}{\begin{tabular}[c]{@{}c@{}}Program Traps\\ (old area)\end{tabular}}} &                                       \\
-			\multicolumn{1}{|c|}{}                                                & \multirow{2}{*}{\texttt{0x2000.0230}} \\ \cline{1-1}
-			\multicolumn{1}{|c|}{\multirow{2}{*}{\begin{tabular}[c]{@{}c@{}}TLB-related\\ exceptions (new area)\end{tabular}}} &                                       \\
-			\multicolumn{1}{|c|}{}                                                & \multirow{2}{*}{\texttt{0x2000.01A4}} \\ \cline{1-1}
-			\multicolumn{1}{|c|}{\multirow{2}{*}{\begin{tabular}[c]{@{}c@{}}TLB-related\\ exceptions (old area)\end{tabular}}} &                                       \\
-			\multicolumn{1}{|c|}{}                                                & \multirow{2}{*}{\texttt{0x2000.0118}} \\ \cline{1-1}
-			\multicolumn{1}{|c|}{\multirow{2}{*}{\begin{tabular}[c]{@{}c@{}}Interrupt\\ (new area)\end{tabular}}} &                                       \\
-			\multicolumn{1}{|c|}{}                                                & \multirow{2}{*}{\texttt{0x2000.008C}} \\ \cline{1-1}
-			\multicolumn{1}{|c|}{\multirow{2}{*}{\begin{tabular}[c]{@{}c@{}}Interrupt\\ (old area)\end{tabular}}} &                                       \\
-			\multicolumn{1}{|c|}{}                                                & \multirow{2}{*}{\texttt{0x2000.0000}} \\ \cline{1-1}
-			\multicolumn{1}{l}{}                                                  &
-		\end{tabular}
-		\caption{Old and New State Areas}
-		\label{fig:old_new_state_areas}
-	\end{subfigure}
-	\qquad
-	\qquad
-	\qquad
-	\begin{subfigure}[b]{0.4\textwidth}
-		\renewcommand{\arraystretch}{0.83}
-		\begin{tabular}{cl}
-			\multicolumn{1}{l}{}                                                  & \multirow{2}{*}{\texttt{0x2000.0FFF}} \\ \cline{1-1}
-			\multicolumn{1}{|c|}{\multirow{2}{*}{\begin{tabular}[c]{@{}c@{}}Stack space for\\ the ROM Routines\end{tabular}}} &                                       \\
-			\multicolumn{1}{|c|}{}                                                & \multirow{2}{*}{\texttt{0x2000.0FF0}} \\ \cline{1-1}
-			\multicolumn{1}{|c|}{\multirow{4}{*}{\cellcolor{gray}}}               &                                       \\ [3ex]
-			\multicolumn{1}{|c|}{\cellcolor{gray}}                                &                                       \\
-			\multicolumn{1}{|c|}{\cellcolor{gray}}                                &                                       \\
-			\multicolumn{1}{|c|}{\cellcolor{gray}}                                & \multirow{2}{*}{\texttt{0x2000.0800}} \\ \cline{1-1}
-			\multicolumn{1}{|c|}{\multirow{4}{*}{64 Segment Tables}}              &                                       \\ [-1ex]
-			\multicolumn{1}{|c|}{}                                                & \multirow{2}{*}{}                     \\
-			\multicolumn{1}{|c|}{}                                                &                                       \\
-			\multicolumn{1}{|c|}{}                                                & \multirow{2}{*}{\texttt{0x2000.0500}} \\ \cline{1-1}
-			\multicolumn{1}{|c|}{\multirow{2}{*}{\cellcolor{gray}}}               &                                       \\ [-2ex]
-			\multicolumn{1}{|c|}{\cellcolor{gray}}                                & \multirow{2}{*}{\texttt{0x2000.0460}} \\ \cline{1-1}
-			\multicolumn{1}{|c|}{\multirow{4}{*}{Old/new areas}}                  &                                       \\
-			\multicolumn{1}{|c|}{}                                                & \multirow{2}{*}{}                     \\
-			\multicolumn{1}{|c|}{}                                                &                                       \\
-			\multicolumn{1}{|c|}{}                                                & \multirow{2}{*}{\texttt{0x2000.0000}} \\ \cline{1-1}
-			                                                                      &
-		\end{tabular}
-		\caption{Overview}
-		\label{fig:rom_reserved_frame_overview}
-	\end{subfigure}
-	\caption{ROM Reserved Frame}
-	\label{fig:rom_reserved_frame}
-\end{figure}
-
-The ROM Reserved Frame was a 4KB (the size of a frame) area at the beginning of the installed RAM.
-It was used, apart from storing the old/new processor's state, also to contain other structures, as \autoref{fig:rom_reserved_frame_overview} shows:
-\begin{itemize}
-	\item a \textit{Segment Table}, from address \texttt{0x2000.0500} to \texttt{0x2000.0800}: a 64 (number of maximum concurrent processes) $\times$ 3 (number of $\mu$MPS2's segments) words area that contained page table pointers [subsection 4.3.1 of \cite{old_pops}];
-	\item a \textit{Stack Space}, from address \texttt{0x2000.0FF0} to \texttt{0x2000.0FFF}, dedicated to the execution of the \textit{ROM exception handlers}.
-\end{itemize}
-
-\subsection{ROM Exception Handlers}
-The ROM Exception Handlers are routines whose job is to prepare the environment on which the kernel's exception handlers will work.
-This means that, after an exception has been raised, before the user-defined functions take place, a series of different actions are made by the ROM (also called \textit{BIOS}), depending on the exception's type.
-
-Apart from some error checking, their essential task is to store off the processor's state in the exact moment the execution's flow has been interrupted in a ``safe place'' in memory (the old areas).
-Furthermore, a new state is loaded onto the processor from a previously set area (the new areas), the one containing the kernel's handler, thus ending the ROM's handlers job.
-
-This ``passing'' set of instructions was internally distinguished into two main events' categories: TLB-Refill exceptions, and all the other ones.
-The entire new $\mu$MPS3's exception handling system is based on this distinction.
-
-\section{Current Implementation}
-\label{chap:new_exception_handling}
-Since all the internal exception handling was dealt upon the ``TLB-Refill/all the others'' exceptions separation, the current $\mu$MPS' implementation brings it even to the front, to the user-perceivable part.
-Hence, the old processor's state areas have been reduced from four to two, one for each category.
-
-In addition, the kernel's handlers to which pass the control to are no more treated as new states to load onto the processor, but just as functions to which let the \textit{Program Counter} jump to.
-This means that the four new processor's state areas are no longer needed too, and has been reduced to only two one-word areas.
-
-Two more one-word areas are needed for the two handlers' stack pointers, so the stack space that was previously reserved at the end of the first frame of RAM has been separated for this purpose.
-
-Finally, the ROM Reserved Frame, previously sat in the first frame of RAM, has been moved to the last frame of memory below the address \texttt{0x1000.0000} (where the Bus Register Area starts), renamed into \textit{BIOS Data Page} [\autoref{fig:bios_data_page}].
-
-\subsection{BIOS Data Page}
+\section{BIOS Data Page}
 \label{chap:bios_data_page}
 
 \begin{figure}[h]
@@ -598,7 +524,7 @@ Finally, the ROM Reserved Frame, previously sat in the first frame of RAM, has b
 	\label{fig:bios_data_page}
 \end{figure}
 
-The BIOS Data Page is the new $\mu$MPS3's 4KB area reserved for the exception handling.
+The \textit{BIOS Data Page} is the new $\mu$MPS3's 4KB area reserved for the exception handling.
 As \autoref{fig:bios_data_page_overview} shows, it contains:
 \begin{itemize}
 	\item a \textit{Processors' States Area}, from address \texttt{0x0FFF.F000} to \texttt{0x0FFF.F8C0}: a 35 (state's size) $\times$ 16 (maximum number of active CPUs) words area dedicated to store the state loaded onto one processor at the moment an exception occurred.
@@ -606,20 +532,120 @@ As \autoref{fig:bios_data_page_overview} shows, it contains:
 	      Processor 0's area is at address \texttt{0x0FFF.F000}, processor 1's one at \texttt{0x0FFF.F08C} (+35 words) and so on;
 	\item a \textit{Handlers' Area}, from address \texttt{0x0FFF.F900} to \texttt{0x0FFF.FA00}: a 4 $\times$ 16 words area containing, for each active CPU:
 	      \begin{itemize}
-		      \item the address of its TLB-Refill handler, to which the workflow will jump after saving the processor's state;
+		      \item the address of its \textit{TLB-Refill handler}, to which the workflow will jump after saving the processor's state;
 		      \item the TLB-Refill handler's stack pointer;
-		      \item the address of its general exceptions handler;
+		      \item the address of its \textit{general exceptions handler};
 		      \item the general exceptions handler's stack pointer;
 	      \end{itemize}
 	      \autoref{fig:four_word_area} shows this four-word area for the first processor.
 	      As for the previous reserved space, these areas are ordered one after the other, from low to high processors' numbers.
 	      Processor 1's one will be at address \texttt{0x0FFF.F910}, processor 2's one at \texttt{0x0FFF.F920} (+4 words) and so on.
 \end{itemize}
+This area is used as interface between the two kernel's handlers and the \textit{ROM Exception Handlers}.
 
-Note: the 192 words Segment Table area has been completely removed, since it is no longer used in the new address translation process.
-\newline
+\subsection{ROM Exception Handlers}
+\label{chap:rom_exception_handlers}
+The ROM Exception Handlers are routines whose job is to prepare the environment on which the kernel's exception handlers will work.
+This means that, after an exception has been raised, before the user-defined functions take place, a series of different actions are made by the ROM (also called \textit{BIOS}), depending on the exception's type.
 
-The ROM exception handlers have been updated as well, simplifying the code which was sometimes redundant and in order to comply with the exception handling's changes.
+Apart from some error checking, their essential task is to store off the processor's state in the exact moment the execution's flow has been interrupted in a ``safe place'' in memory (the processors' states areas).
+Furthermore, the \textit{Program Counter} will jump to the address of the appropriate kernel's handler, thus ending the ROM's handlers job.
+
+This ``passing'' set of instructions was internally distinguished into two main events' categories: TLB-Refill exceptions, and all the other ones.
+The entire new $\mu$MPS3's exception handling system is based on this distinction.
+
+\section{Previous Implementation}
+The exception handling of $\mu$MPS' previous versions was managed by distinguishing them by their type: Program Traps, System Calls and Breakpoints, Interrupts and TLB-related exceptions.
+
+Since this subdivision existed, four different areas were needed to save the processor's state (called \textit{old areas}).
+The functions to subsequently call were treated as new states to load onto the processor, hence, other four areas were needed (called \textit{new areas}), which contained the addresses of the exception's handlers.
+
+These four pair of areas, each one linked to its specific exception's type, were stored in a 35 (state's size) $\times$ 8 words area [\autoref{fig:old_new_state_areas}] at the beginning of the so-called \textit{ROM Reserved Frame} [\autoref{fig:rom_reserved_frame}].
+
+\subsection{ROM Reserved Frame}
+\label{chap:rom_reserved_frame}
+\begin{figure}[h]
+	\centering
+	\begin{subfigure}[b]{0.4\textwidth}
+		\renewcommand{\arraystretch}{0.9}
+		\begin{tabular}{cl}
+			\multicolumn{1}{l}{}                                                  & \multirow{2}{*}{\texttt{0x2000.0460}} \\ \cline{1-1}
+			\multicolumn{1}{|c|}{\multirow{2}{*}{\begin{tabular}[c]{@{}c@{}}Syscalls and Breakpoints\\ (new area)\end{tabular}}} &                                       \\
+			\multicolumn{1}{|c|}{}                                                & \multirow{2}{*}{\texttt{0x2000.03D4}} \\ \cline{1-1}
+			\multicolumn{1}{|c|}{\multirow{2}{*}{\begin{tabular}[c]{@{}c@{}}Syscalls and Breakpoints\\ (old area)\end{tabular}}} &                                       \\
+			\multicolumn{1}{|c|}{}                                                & \multirow{2}{*}{\texttt{0x2000.0348}} \\ \cline{1-1}
+			\multicolumn{1}{|c|}{\multirow{2}{*}{\begin{tabular}[c]{@{}c@{}}Program Traps\\ (new area)\end{tabular}}} &                                       \\
+			\multicolumn{1}{|c|}{}                                                & \multirow{2}{*}{\texttt{0x2000.02BC}} \\ \cline{1-1}
+			\multicolumn{1}{|c|}{\multirow{2}{*}{\begin{tabular}[c]{@{}c@{}}Program Traps\\ (old area)\end{tabular}}} &                                       \\
+			\multicolumn{1}{|c|}{}                                                & \multirow{2}{*}{\texttt{0x2000.0230}} \\ \cline{1-1}
+			\multicolumn{1}{|c|}{\multirow{2}{*}{\begin{tabular}[c]{@{}c@{}}TLB-related\\ exceptions (new area)\end{tabular}}} &                                       \\
+			\multicolumn{1}{|c|}{}                                                & \multirow{2}{*}{\texttt{0x2000.01A4}} \\ \cline{1-1}
+			\multicolumn{1}{|c|}{\multirow{2}{*}{\begin{tabular}[c]{@{}c@{}}TLB-related\\ exceptions (old area)\end{tabular}}} &                                       \\
+			\multicolumn{1}{|c|}{}                                                & \multirow{2}{*}{\texttt{0x2000.0118}} \\ \cline{1-1}
+			\multicolumn{1}{|c|}{\multirow{2}{*}{\begin{tabular}[c]{@{}c@{}}Interrupt\\ (new area)\end{tabular}}} &                                       \\
+			\multicolumn{1}{|c|}{}                                                & \multirow{2}{*}{\texttt{0x2000.008C}} \\ \cline{1-1}
+			\multicolumn{1}{|c|}{\multirow{2}{*}{\begin{tabular}[c]{@{}c@{}}Interrupt\\ (old area)\end{tabular}}} &                                       \\
+			\multicolumn{1}{|c|}{}                                                & \multirow{2}{*}{\texttt{0x2000.0000}} \\ \cline{1-1}
+			\multicolumn{1}{l}{}                                                  &
+		\end{tabular}
+		\caption{Old and New State Areas}
+		\label{fig:old_new_state_areas}
+	\end{subfigure}
+	\qquad
+	\qquad
+	\qquad
+	\begin{subfigure}[b]{0.4\textwidth}
+		\renewcommand{\arraystretch}{0.9}
+		\begin{tabular}{cl}
+			\multicolumn{1}{l}{}                                                  & \multirow{2}{*}{\texttt{0x2000.0FFF}} \\ \cline{1-1}
+			\multicolumn{1}{|c|}{\multirow{2}{*}{\begin{tabular}[c]{@{}c@{}}Stack space for\\ the ROM Routines\end{tabular}}} &                                       \\
+			\multicolumn{1}{|c|}{}                                                & \multirow{2}{*}{\texttt{0x2000.0FF0}} \\ \cline{1-1}
+			\multicolumn{1}{|c|}{\multirow{4}{*}{\cellcolor{gray}}}               &                                       \\ [3ex]
+			\multicolumn{1}{|c|}{\cellcolor{gray}}                                &                                       \\
+			\multicolumn{1}{|c|}{\cellcolor{gray}}                                &                                       \\
+			\multicolumn{1}{|c|}{\cellcolor{gray}}                                & \multirow{2}{*}{\texttt{0x2000.0800}} \\ \cline{1-1}
+			\multicolumn{1}{|c|}{\multirow{4}{*}{64 Segment Tables}}              &                                       \\ [-1ex]
+			\multicolumn{1}{|c|}{}                                                & \multirow{2}{*}{}                     \\
+			\multicolumn{1}{|c|}{}                                                &                                       \\
+			\multicolumn{1}{|c|}{}                                                & \multirow{2}{*}{\texttt{0x2000.0500}} \\ \cline{1-1}
+			\multicolumn{1}{|c|}{\multirow{2}{*}{\cellcolor{gray}}}               &                                       \\ [-2ex]
+			\multicolumn{1}{|c|}{\cellcolor{gray}}                                & \multirow{2}{*}{\texttt{0x2000.0460}} \\ \cline{1-1}
+			\multicolumn{1}{|c|}{\multirow{4}{*}{Old/new areas}}                  &                                       \\
+			\multicolumn{1}{|c|}{}                                                & \multirow{2}{*}{}                     \\
+			\multicolumn{1}{|c|}{}                                                &                                       \\
+			\multicolumn{1}{|c|}{}                                                & \multirow{2}{*}{\texttt{0x2000.0000}} \\ \cline{1-1}
+			                                                                      &
+		\end{tabular}
+		\caption{Overview}
+		\label{fig:rom_reserved_frame_overview}
+	\end{subfigure}
+	\caption{ROM Reserved Frame}
+	\label{fig:rom_reserved_frame}
+\end{figure}
+
+The ROM Reserved Frame was a 4KB (the size of a frame) area at the beginning of the installed RAM.
+It was used, apart from storing the old/new processor's state, also to contain other structures, as \autoref{fig:rom_reserved_frame_overview} shows:
+\begin{itemize}
+	\item a \textit{Segment Table}, from address \texttt{0x2000.0500} to \texttt{0x2000.0800}: a 64 (number of maximum concurrent processes) $\times$ 3 (number of $\mu$MPS2's segments) words area that contained page table pointers [subsection 4.3.1 of \cite{old_pops}];
+	\item a \textit{Stack Space}, from address \texttt{0x2000.0FF0} to \texttt{0x2000.0FFF}, dedicated to the execution of the ROM exception handlers.
+\end{itemize}
+
+\section{Differences from $\mu$MPS2}
+In addition to the two atomic actions described in \autoref{chap:processor_actions_on_exceptions}, another step to disable the virtual memory was taken in $\mu$MPS' previous versions, since the processor's state reserved area was above the address \texttt{0x2000.0000} \autoref{fig:rom_reserved_frame}.
+With the virtual memory bit enabled, those addresses were considered virtual, leading to possible raises of TLB-management exceptions, which would have meant entering in an \textit{infinite loop}.
+However, as explained in \autoref{chap:vm_bit_removal}, this has been completely removed .
+
+The 192 words Segment Table area [\autoref{fig:rom_reserved_frame_overview}] has been eliminated too in $\mu$MPS3, since it is no longer used in the new address translation process.
+
+Since all the internal exception handling was dealt upon the ``TLB-Refill/all the others'' exceptions separation, the current $\mu$MPS' implementation brings it even to the front, to the user-perceivable part.
+In addition, the kernel’s handlers to which the control is passed are no more treated as new states to load onto the processor, but just as functions to which let the Program Counter jump to.
+This means that the four new processor’s state areas are no longer needed too, and has been reduced to only two one-word areas.
+
+Two more one-word areas are needed for the two handlers' stack pointers, so the stack space that was previously reserved at the end of the first frame of RAM has been separated for this purpose.
+
+The ROM Reserved Frame, previously sat in the first frame of RAM, has been moved to the last frame of memory below the address \texttt{0x1000.0000} (where the Bus Register Area starts), renamed into BIOS Data Page [\autoref{fig:bios_data_page}].
+
+Finally, the ROM exception handlers have been updated as well, simplifying the code which was sometimes redundant and in order to comply with the exception handling's changes.
 
 How $\mu$MPS3 knows where to find the right area to save each processors' state and to retrieve the handlers is described along with the updated multiprocessor support in \autoref{chap:multiprocessor_support}.
 
@@ -628,7 +654,7 @@ How $\mu$MPS3 knows where to find the right area to save each processors' state 
 \lhead[\fancyplain{}{\bfseries\thepage}]{\fancyplain{}{\bfseries\rightmark}}
 The first major revision, $\mu$MPS2, has implemented the multiprocessor support: the emulator is currently capable of supporting up to 16 simultaneously active CPUs.
 Their functioning has not been changed in this new emulator's version, described in detail at chapter 7 of \cite{old_pops}.
-However, it is important to understand how their initialization has been modified in order to comply with the new exception handling [\autoref{chap:new_exception_handling}].
+However, it is important to understand how their initialization has been modified in order to comply with the new exception handling [\autoref{chap:nexception_handling}].
 
 \section{Processors Initialization}
 As subsection 7.2.2 of \cite{old_pops} explains, each processor has a private set of five \textit{Processor Interface Registers} [\autoref{tab:processor_interface_registers}], and each one sees only its own private instance.
@@ -756,19 +782,20 @@ It is also possible to create an empty flash image file by passing ``\texttt{/de
 
 Going more in detail, after correctly running the previous command, the utility will decode command-line's argument, if existing.
 
-Then, it will attempt to open, via a common \texttt{fopen}, the flash device's image file in write-mode.
-If the operation is successfull, a \texttt{FLASHFILEID} (\texttt{0x0153504D}) will be written into the first word of memory of the file by using an \texttt{fwrite} function.
+Then, it will attempt to open, the flash device's image file in write-mode.
+If the operation is successfull, a \texttt{FLASHFILEID} (\texttt{0x0153504D}) will be written into the first word of memory of the file.
 This file recognition tag is used to distinguish this type of file from all the other types of files generated or recognized by $\mu$MPS3.
 
 Number of blocks and write speed are also subsequently written, which, along with the \texttt{FLASHFILEID}, compose the \textit{header} of the flash device.
 These three parameters will be needed by $\mu$MPS3, when interacting with the device, to correctly simulate it.
 
-Lastly, after opening it in read-mode by using an \texttt{fread} function, the existing file will be written inside the image file block-by-block.
+Lastly, after opening it in read-mode, the existing file will be written inside the image file block-by-block.
 
-Once the \textit{end-of-file} indicator is reached, in case no errors have occurred, the flash device image file will be successfully created.
+Once the \textit{end-of-file} indicator is reached, the remaing space will be filled with empty blocks.
+In case no errors have occurred, the flash device image file will be successfully created.
 
 \subsection{Usage}
-The use of a flash device, in $\mu$MPS3, is not significantly different from the use of any other device. As reported on the manual \textit{$\mu$MPS2 Principles of Operation} \cite{pops}:
+The use of a flash device, in $\mu$MPS3, is not significantly different from the use of any other device. As reported on the manual \textit{$\mu$MPS3 Principles of Operation} \cite{pops}:
 \begin{quote}
 	Each single device is operated by a controller.
 	Controllers exchange information with the processor via device registers; special memory locations.
@@ -818,6 +845,7 @@ A flash device's register \texttt{STATUS} field is read-only and will contain on
 	\caption{Flash Device Status Codes}
 \end{table}
 
+\newpage
 From \cite{pops}:
 \begin{quote}
 	Status codes 1, 2, and 4-6 are completion codes.
@@ -880,7 +908,7 @@ Schools and Universities usually dispose of computer labs, but the possibility o
 This is particularly convenient when the software concerned will be used as a study aid in a computer class, and it is well-known that programmers work at any time of day (or night).
 
 Given this premise, the tool should be installable on the students' personal computers, and one problem that doesn't usually show up on laboratories' machines is the system diversity.
-The software's developers could surely give requirements and instructions on how to install it on different computers depending, for example, on the hardware, but when it comes to large projects with lots of dependencies and steps to be able to run it, it is always preferable to use an automatic process.
+The software's developers could surely give requirements and instructions on how to install it on different computers depending, for example, on the hardware, but when it comes to larger projects with lots of dependencies and steps to be able to run it, it is always preferable to use an automatic process.
 $\mu$MPS represents a classical example of this kind of big project, with a not so simple building and installing procedure.
 
 In the late 1990s, when its development started, there was principally one solution: the \textit{GNU Autotools}.
@@ -914,7 +942,7 @@ $\mu$MPS3 could have just used the already implemented Autotools' structure, but
 
 \section{Graphical User Interface}
 $\mu$MPS' front-end is one of its most important aspects, since it is the first thing a student sees after launching it.
-Being a pedagogical tool, one should expect it to be used by any level of experience in the area, hence, it should be the most intuitive possible.
+Being a pedagogical tool, one would expect it to be used by any level of experience in the area, hence, it should be the most intuitive possible.
 Nevertheless, this must not prevent the possibility to access every advanced feature directly from the GUI.
 Jonjic has perfectly succeeded in this goal implementing the current one, described in detail in the 3rd chapter of his thesis \cite{tjonjic}, and this third version of the software brings only an update of the one built by him.
 
@@ -990,7 +1018,7 @@ The ``\textit{Edit configuration}'' menu entry has been moved from the ``Machine
 \end{figure}
 
 A ``\textit{Clean recent}'' option has been added, a underestimated, yet still useful, function offering the possibility to remove all the used machine's configurations from the ``Recent menu'' [\autoref{fig:clear_recent}].
-Previously, the only way to do it was by manually editing \texttt{$\sim$/.config/umps3/umps.conf}, not a very practical method to maintain a clean emulator's view.
+Previously, the only way to do it was by manually editing \texttt{$\sim$/.config/umps3/umps.conf}, not a very practical method to clean the emulator's overview.
 \begin{figure}[h]
 	\centering
 	\includegraphics[scale=0.75]{clear_recent}
@@ -1007,7 +1035,7 @@ The ``\textit{Reset}'' shortcut has been made available in the processor's view 
 	\label{fig:reset}
 \end{figure}
 
-The \texttt{RAMTOP} machine's value is now available from the configuration's overview [\autoref{fig:ramtop}], increasing the transparency for the user of how $\mu$MPS' physical memory works [\autoref{chap:physical_memory}].
+The \texttt{RAMTOP} machine's value is now available from the configuration's overview [\autoref{fig:ramtop}], increasing the transparency for the user on how $\mu$MPS' physical memory works [\autoref{chap:physical_memory}].
 \begin{figure}[h]
 	\centering
 	\includegraphics[scale=0.72]{ramtop}
