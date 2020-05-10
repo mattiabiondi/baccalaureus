@@ -696,12 +696,14 @@ While the first three fields have not changed in their working, the other two ha
 \subsection{Processor 0}
 The first things loaded right after the machine has been turned on (or restarted), are the Bootstrap BIOS Services \cite{pops}.
 They are responsible for setting up the correct handling areas [\autoref{chap:bios_data_page}] for the default processor, the first one.
-
 \textit{BIOS Reserved 1} and \textit{BIOS Reserved 2} are used for this purpose.
-For the first processor, the first one was previously set (in the Boostrap code) to the beginning of the Old/New State Area [\autoref{fig:old_new_state_areas}], at address \texttt{0x2000.0000}, while the latter to the stack space at the end of the first frame of RAM, at address \texttt{0x2000.0FFF}.
 
-At boot/reset time, BIOS Reserved 1 is now set up to point the bottom of the BIOS Data Page [\autoref{fig:bios_data_page}], where its reserved exception state space starts.
-On the other hand, BIOS Reserved 2 now points to the processor 0 Pass Up Vector, at address \texttt{0x0FFF.F900}.
+In $\mu$MPS2, for the first processor, the BIOS Reserved 1 register was set, by the Bootstrap BIOS Services, to point the beginning of the Old/New State Area [\autoref{fig:old_new_state_areas}], at address \texttt{0x2000.0000}.
+The BIOS Reserved 2 register was set to point the reserved space at the end of the first frame of RAM, at address \texttt{0x2000.0FFF}.
+
+In $\mu$MPS3, at boot/reset time, the Bootstrap BIOS Services set up the BIOS Reserved 1 register to point the bottom of the BIOS Data Page (\texttt{0x0FFF.F000}) [\autoref{fig:bios_data_page}], where the reserved exception state space for processor 0 starts.
+On the other hand, BIOS Reserved 2 now points to the Pass Up Vector of processor 0, at address \texttt{0x0FFF.F900}.
+
 After that, the Bootstrap BIOS Services load the OS code.
 
 \subsection{Processors 1-15}
@@ -710,20 +712,26 @@ How all the other processors were previously initialized is described in subsect
 To sum up, the \textit{libumps} library provides a BIOS service designed to simplify the initialization of the processors.
 Libumps is a C library supplied with $\mu$MPS installation to provide access to CP0 instructions, the CP0 registers, and the extended BIOS-based services/instructions avoiding to program in MIPS assembler.
 
-This particular function is called \texttt{initCPU} [subsection 7.5.2 of \cite{old_pops}] and the original syntax was:
+This specific BIOS service is called \texttt{initCPU}, and the original syntax was:
 \begin{verbatim}
   void INITCPU (uint32_t cpuid,
                 state_t *start_state,
                 state_t *state_areas);
 \end{verbatim}
 
-The BIOS service initiated the processor specified by \texttt{cpuid}, loading the processor state from the supplied \texttt{start\_state} parameter onto it.
+In $\mu$MPS2, \texttt{initCPU} initiated the processor specified by \texttt{cpuid}, loading the processor state from the supplied \texttt{start\_state} parameter onto it.
 The address of BIOS Reserved 2 was calculated by multiplying the processor number $\times$ the size of the reserved space the BIOS needed for the handlers of each CPU (32 bytes).
-Since a separate space was needed for Old/New Processor State Areas too, the third parameter, \texttt{state\_areas}, was used to indicate the address for BIOS Reserved 1.
+Since a separate space was needed for Old/New Processor State Areas too, the third parameter, \texttt{state\_areas}, was used to indicate the address for BIOS Reserved 1 [subsection 7.5.2 of \cite{old_pops}].
 
-The current \texttt{initCPU} implementation keeps only the first two parameters, calculating internally the correct areas without needing the user.
-The \texttt{cpuid} parameter is now multiplied $\times$ the size of a processor state (35 words) to get an offset to be summed to the bottom of the BIOS Data Page [\autoref{chap:bios_data_page}]: this value indicates the address of the processor exception state area, the same one BIOS Reserved 1 has to be set to.
-The other field is determined similarly, multiplying the processor ID $\times$ the size of the Pass Up Vector area (4 words): this value is the offset from address \texttt{0x0FFF.F900} to which set BIOS Reserved 2.
+In $\mu$MPS3, the implementation of \texttt{initCPU} keeps only the first two parameters, calculating internally the correct areas where to save the processor state without needing the user:
+\begin{verbatim}
+  void INITCPU (uint32_t cpuid,
+                state_t *start_state);
+\end{verbatim}
+
+The \texttt{start\_state} parameter is used to initialize the \texttt{cpuid} processor as in $\mu$MPS2.
+The \texttt{cpuid} parameter is now multiplied $\times$ the size of a processor state (35 words) to get an offset to be summed to the bottom of the BIOS Data Page [\autoref{chap:bios_data_page}]: this value indicates the address of the processor exception state area, the same one BIOS Reserved 1 has to point to (e.g. \texttt{0x0FFF.F08C} for processor 1, \texttt{0x0FFF.F118} for processor 2 and so on).
+The other Processor Interface Register is set up similarly, multiplying the processor ID $\times$ the size of the Pass Up Vector area (4 words): this value is the offset from address \texttt{0x0FFF.F900} to which BIOS Reserved 2 has to point to (e.g. \texttt{0x0FFF.F910} for processor 1, \texttt{0x0FFF.F920} for processor 2 and so on).
 
 Now, the BIOS routines only have to use BIOS Reserved 1 and BIOS Reserved 2 of a processor to retrieve the correct exception state area and the required Pass Up Vector.
 
