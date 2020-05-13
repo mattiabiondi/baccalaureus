@@ -253,6 +253,9 @@ TSWLatexianTemp*
 # Kile
 *.backup
 
+# GNOME LaTeX
+*.tex~
+
 # gummi
 .*.swp
 
@@ -274,3 +277,6 @@ TSWLatexianTemp*
 
 # Makeindex log files
 *.lpz
+
+# latexindent
+*.bak*
