@@ -1,0 +1,238 @@
+\documentclass{beamer}
+
+\usepackage[utf8]{inputenc}
+\usepackage[default]{roboto}
+\usepackage[T1]{fontenc}
+\usepackage{colortbl}
+\usepackage{multirow}
+\usepackage{hhline}
+\usepackage{graphicx}
+
+\beamertemplatenavigationsymbolsempty
+
+\definecolor{nord0}{HTML}{2E3440}
+\definecolor{nord1}{HTML}{3B4252}
+\definecolor{nord2}{HTML}{434C5E}
+\definecolor{nord3}{HTML}{4C566A}
+\definecolor{nord4}{HTML}{D8DEE9}
+\definecolor{nord5}{HTML}{E5E9F0}
+\definecolor{nord6}{HTML}{ECEFF4}
+\definecolor{nord7}{HTML}{8FBCBB}
+\definecolor{nord8}{HTML}{88C0D0}
+\definecolor{nord9}{HTML}{81A1C1}
+\definecolor{nord10}{HTML}{5E81AC}
+\definecolor{nord11}{HTML}{BF616A}
+\definecolor{nord12}{HTML}{D08770}
+\definecolor{nord13}{HTML}{EBCB8B}
+\definecolor{nord14}{HTML}{A3BE8C}
+\definecolor{nord15}{HTML}{B48EAD}
+
+\setbeamercolor{background canvas}{bg=nord5}
+\setbeamercolor{title}{bg=nord5,fg=nord10}
+\setbeamercolor{subtitle}{bg=nord5,fg=nord9}
+\setbeamercolor{author}{bg=nord5,fg=nord1}
+\setbeamercolor{institute}{bg=nord5,fg=nord3}
+\setbeamercolor{date}{bg=nord5,fg=nord2}
+
+\title{An Updated Emulated Architecture\\to Support the Study\\of Operating Systems}
+\subtitle{µMPS3}
+\author{Mattia Biondi}
+\institute{Alma Mater Studiorum $\cdot$ Università di Bologna\\
+Scuola di Scienze\\
+Corso di Laurea in Informatica}
+\date{27 Maggio 2020}
+
+\begin{document}
+
+\frame{\titlepage}
+
+\setbeamercolor{background canvas}{bg=nord4}
+\setbeamercolor{frametitle}{bg=nord0,fg=nord5}
+\setbeamercolor{block body}{bg=nord3,fg=nord5}
+
+\begin{frame}
+	\frametitle{The µMPS Project}
+	\setbeamercolor{block title}{bg=nord1,fg=nord7}
+	\setbeamercolor{itemize item}{fg=nord7}
+	\begin{block}{\textbf{What}}
+		An educational computer system architecture based around the MIPS R2/3000 microprocessor featuring
+		\begin{itemize}
+			\item a front-end emulator
+			\item a set of I/O devices
+		\end{itemize}
+	\end{block}
+	\begin{center}
+		\setbeamercolor{itemize item}{fg=nord13}
+		\setbeamercolor{block title}{bg=nord1,fg=nord13}
+		\begin{minipage}{0.35\textwidth}
+			\begin{block}{\textbf{When}}
+				\vspace{0.6em}
+				\begin{itemize}
+					\item 1999\, \quad MPS
+					\item 2004 \quad µMPS
+					\item 2011\; \quad µMPS2
+					\item \textbf{2020} \quad \textbf{µMPS3}
+				\end{itemize}
+				\vspace{0.5em}
+			\end{block}
+		\end{minipage}
+		\qquad
+		\setbeamercolor{itemize item}{fg=nord14}
+		\setbeamercolor{block title}{bg=nord1,fg=nord14}
+		\begin{minipage}{0.55\textwidth}
+			\begin{block}{\textbf{Where}}
+				\underline{Created}
+				\begin{itemize}
+					\item University of Bologna
+					\item Xavier University
+				\end{itemize}
+
+				\underline{Used}
+				\begin{itemize}
+					\item all around the world
+				\end{itemize}
+			\end{block}
+		\end{minipage}
+	\end{center}
+\end{frame}
+
+\begin{frame}
+	\frametitle{Physical Memory}
+	\begin{center}
+		\setbeamercolor{block title}{bg=nord1,fg=nord11}
+		\begin{minipage}{0.45\textwidth}
+			\begin{block}{\textbf{µMPS2}}
+				\vspace{0.7em}
+				\begin{figure}[h]
+					\centering
+					\renewcommand{\arraystretch}{1}
+					\begin{tabular}{rcl}
+						                                                                    &                                                                     & \multirow{2}{*}{\texttt{{\tiny 0xFFFF.FFFF}}} \\ \hhline{~-~}
+						\multicolumn{1}{l|}{}                                               & \multicolumn{1}{c|}{\multirow{2}{*}{\cellcolor{nord0}}}             &                                               \\ [-1.5ex]
+						\multicolumn{1}{l|}{}                                               & \multicolumn{1}{c|}{\cellcolor{nord0}}                              & \multirow{2}{*}{\texttt{{\tiny RAMTOP}}}      \\ \hhline{--~}
+						\multicolumn{1}{l|}{\multirow{6}{*}{\rotatebox{90}{{\small RAM}}}}  & \multicolumn{1}{c|}{\multirow{3}{*}{\cellcolor{nord12}}}            &                                               \\ [1.5ex]
+						\multicolumn{1}{l|}{}                                               & \multicolumn{1}{c|}{\cellcolor{nord12}}                             &                                               \\
+						\multicolumn{1}{l|}{}                                               & \multicolumn{1}{c|}{\cellcolor{nord12}}                             &                                               \\
+						\multicolumn{1}{l|}{}                                               & \multicolumn{1}{c|}{\cellcolor{nord12}}                             & \multirow{2}{*}{\texttt{{\tiny 0x2001.0000}}} \\
+						\multicolumn{1}{l|}{}                                               & \multicolumn{1}{c|}{\multirow{2}{*}{\begin{tabular}[c]{@{}c@{}}{\cellcolor{nord11}\scriptsize \textit{ROM Reserved}}\\ {\cellcolor{nord11}\scriptsize \textit{Frame}}\end{tabular}}} &                                               \\
+						\multicolumn{1}{l|}{}                                               & \multicolumn{1}{c|}{}                                               & \multirow{2}{*}{\texttt{{\tiny 0x2000.0000}}} \\ \hhline{--~}
+						\multicolumn{1}{l|}{\multirow{3}{*}{\rotatebox{90}{{\small BIOS}}}} & \multicolumn{1}{l|}{\multirow{3}{*}{\cellcolor{nord10}}}            &                                               \\
+						\multicolumn{1}{l|}{}                                               & \multicolumn{1}{l|}{\cellcolor{nord10}}                             &                                               \\
+						\multicolumn{1}{l|}{}                                               & \multicolumn{1}{l|}{\cellcolor{nord10}}                             & \multirow{2}{*}{\texttt{{\tiny 0x0000.0000}}} \\ \cline{2-2}
+						                                                                    & \multicolumn{1}{l}{}                                                &
+					\end{tabular}
+				\end{figure}
+			\end{block}
+		\end{minipage}
+		\qquad
+		\setbeamercolor{block title}{bg=nord1,fg=nord14}
+		\begin{minipage}{0.45\textwidth}
+			\begin{block}{\textbf{µMPS3}}
+				\vspace{0.5em}
+				\begin{figure}[h]
+					\centering
+					\renewcommand{\arraystretch}{1}
+					\begin{tabular}{rcl}
+						                                                                    &                                                                     & \multirow{2}{*}{\texttt{{\tiny 0xFFFF.FFFF}}} \\ \hhline{~-~}
+						\multicolumn{1}{l|}{}                                               & \multicolumn{1}{c|}{\multirow{2}{*}{\cellcolor{nord0}}}             &                                               \\ [-1.5ex]
+						\multicolumn{1}{l|}{}                                               & \multicolumn{1}{c|}{\cellcolor{nord0}}                              & \multirow{2}{*}{\texttt{{\tiny RAMTOP}}}      \\ \hhline{--~}
+						\multicolumn{1}{l|}{\multirow{5}{*}{\rotatebox{90}{{\small RAM}}}}  & \multicolumn{1}{c|}{\multirow{5}{*}{\cellcolor{nord12}}}            &                                               \\
+						\multicolumn{1}{l|}{}                                               & \multicolumn{1}{c|}{\cellcolor{nord12}}                             &                                               \\
+						\multicolumn{1}{l|}{}                                               & \multicolumn{1}{c|}{\cellcolor{nord12}}                             & \multirow{2}{*}{}                             \\
+						\multicolumn{1}{l|}{}                                               & \multicolumn{1}{c|}{\cellcolor{nord12}}                             &                                               \\
+						\multicolumn{1}{l|}{}                                               & \multicolumn{1}{c|}{\cellcolor{nord12}}                             & \multirow{2}{*}{\texttt{{\tiny 0x2000.0000}}} \\ \hhline{--~}
+						\multicolumn{1}{l|}{\multirow{6}{*}{\rotatebox{90}{{\small BIOS}}}} & \multicolumn{1}{c|}{\cellcolor{nord10}}                             &                                               \\ [-1.5ex]
+						\multicolumn{1}{l|}{}                                               & \multicolumn{1}{c|}{\cellcolor{nord10}}                             & \multirow{2}{*}{\texttt{{\tiny 0x1000.0000}}} \\
+						\multicolumn{1}{l|}{}                                               & \multicolumn{1}{c|}{\multirow{2}{*}{\begin{tabular}[c]{@{}c@{}}{\cellcolor{nord14}\scriptsize \textit{~~~~BIOS Data~~~~}}\\ {\cellcolor{nord14}\scriptsize \textit{Page}}\end{tabular}}} &                                               \\
+						\multicolumn{1}{l|}{}                                               & \multicolumn{1}{c|}{}                                               & \multirow{2}{*}{\texttt{{\tiny 0x0FFF.F000}}} \\
+						\multicolumn{1}{l|}{}                                               & \multicolumn{1}{c|}{\cellcolor{nord10}}                             &                                               \\ [-1.5ex]
+						\multicolumn{1}{l|}{}                                               & \multicolumn{1}{c|}{\cellcolor{nord10}}                             & \multirow{2}{*}{\texttt{{\tiny 0x0000.0000}}} \\ \cline{2-2}
+						                                                                    & \multicolumn{1}{l}{}                                                &
+					\end{tabular}
+				\end{figure}
+			\end{block}
+		\end{minipage}
+	\end{center}
+\end{frame}
+
+\begin{frame}
+	\frametitle{Virtual Memory}
+	\begin{center}
+		\setbeamercolor{block title}{bg=nord1,fg=nord11}
+		\begin{minipage}{0.45\textwidth}
+			\begin{block}{\textbf{µMPS2}}
+				\begin{figure}[h]
+					\centering
+					\renewcommand{\arraystretch}{1.05}
+					\begin{tabular}{cl}
+						\multicolumn{1}{c}{}                                           & \multirow{2}{*}{\texttt{{\tiny 0xFFFF.FFFF}}} \\ \cline{1-1}
+						\multicolumn{1}{|c|}{\multirow{2}{*}{{\small ~~~~kUseg3~~~~}}} &                                               \\
+						\multicolumn{1}{|c|}{}                                         & \multirow{2}{*}{\texttt{{\tiny 0xC000.0000}}} \\ \cline{1-1}
+						\multicolumn{1}{|c|}{\multirow{2}{*}{{\small kUseg2}}}         &                                               \\
+						\multicolumn{1}{|c|}{}                                         & \multirow{2}{*}{\texttt{{\tiny 0x8000.0000}}} \\ \cline{1-1}
+						\multicolumn{1}{|c|}{\multirow{4}{*}{{\small ksegOS}}}         &                                               \\
+						\multicolumn{1}{|c|}{}                                         & \multirow{4}{*}{}                             \\
+						\multicolumn{1}{|c|}{}                                         &                                               \\
+						\multicolumn{1}{|c|}{}                                         & \multirow{2}{*}{\texttt{{\tiny 0x0000.0000}}} \\ \cline{1-1}
+						\multicolumn{1}{l}{}                                           &
+					\end{tabular}
+				\end{figure}
+			\end{block}
+		\end{minipage}
+		\qquad
+		\setbeamercolor{block title}{bg=nord1,fg=nord14}
+		\begin{minipage}{0.45\textwidth}
+			\begin{block}{\textbf{µMPS3}}
+				\begin{figure}[h]
+					\centering
+					\renewcommand{\arraystretch}{0.75}
+					\begin{tabular}{cl}
+						\multicolumn{1}{c}{}                                          & \multirow{2}{*}{\texttt{{\tiny 0xFFFF.FFFF}}} \\ \cline{1-1}
+						\multicolumn{1}{|c|}{\multirow{4}{*}{{\small ~~~~kuseg~~~~}}} &                                               \\
+						\multicolumn{1}{|c|}{}                                        & \multirow{2}{*}{}                             \\
+						\multicolumn{1}{|c|}{}                                        &                                               \\
+						\multicolumn{1}{|c|}{}                                        & \multirow{2}{*}{\texttt{{\tiny 0x8000.0000}}} \\ \cline{1-1}
+						\multicolumn{1}{|c|}{\multirow{4}{*}{{\small kseg2}}}         &                                               \\
+						\multicolumn{1}{|c|}{}                                        & \multirow{2}{*}{}                             \\
+						\multicolumn{1}{|c|}{}                                        &                                               \\
+						\multicolumn{1}{|c|}{}                                        & \multirow{2}{*}{\texttt{{\tiny 0x4000.0000}}} \\ \cline{1-1}
+						\multicolumn{1}{|c|}{\multirow{2}{*}{{\small kseg1}}}         &                                               \\
+						\multicolumn{1}{|c|}{}                                        & \multirow{2}{*}{\texttt{{\tiny 0x2000.0000}}} \\ \cline{1-1}
+						\multicolumn{1}{|c|}{\multirow{2}{*}{{\small kseg0}}}         &                                               \\
+						\multicolumn{1}{|c|}{}                                        & \multirow{2}{*}{\texttt{{\tiny 0x0000.0000}}} \\ \cline{1-1}
+						\multicolumn{1}{l}{}                                          &
+					\end{tabular}
+				\end{figure}
+			\end{block}
+		\end{minipage}
+	\end{center}
+\end{frame}
+
+\begin{frame}
+	\frametitle{TLB Floor Address}
+\end{frame}
+
+\begin{frame}
+	\frametitle{Exception Handling}
+\end{frame}
+
+\begin{frame}
+	\frametitle{Processors Initialization}
+\end{frame}
+
+\begin{frame}
+	\frametitle{Flash Device}
+\end{frame}
+
+\begin{frame}
+	\frametitle{Building Process}
+\end{frame}
+
+\begin{frame}
+	\frametitle{Graphical User Interface}
+\end{frame}
+
+\begin{frame}
+	Thank you
+\end{frame}
+\end{document}
