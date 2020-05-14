@@ -12,6 +12,7 @@
 \usepackage{listings}
 \usepackage{subcaption}
 \usepackage[hidelinks]{hyperref}
+\usepackage{hhline}
 \definecolor{background}{HTML}{EEEEEE}
 \lstdefinelanguage{json}{
     basicstyle=\footnotesize\ttfamily,
@@ -196,7 +197,7 @@ Hence, the value of \texttt{RAMTOP} range from \texttt{0x2000.8000} to \texttt{0
 	\centering
 	\renewcommand{\arraystretch}{0.755}
 	\begin{tabular}{cl}
-		                                                           & \multirow{2}{*}{\texttt{0xFFFF.FFFF}} \\ \cline{1-1}
+		                                                           & \multirow{2}{*}{\texttt{0xFFFF.FFFF}} \\ \hhline{-~}
 		\multicolumn{1}{|c|}{\multirow{2}{*}{\cellcolor{gray}}}    &                                       \\ [-1ex]
 		\multicolumn{1}{|c|}{\cellcolor{gray}}                     & \multirow{2}{*}{\texttt{RAMTOP}}      \\ \cline{1-1}
 		\multicolumn{1}{|c|}{\multirow{4}{*}{installed RAM}}       &                                       \\
@@ -234,11 +235,11 @@ The first big area of the memory [\autoref{fig:kernel_reserved_space}] is reserv
 \begin{figure}[ht]
 	\centering
 	\begin{tabular}{cl}
-		\multicolumn{1}{l}{}                                                & \multirow{2}{*}{\texttt{0x2000.0000}} \\ \cline{1-1}
+		\multicolumn{1}{l}{}                                                & \multirow{2}{*}{\texttt{0x2000.0000}} \\ \hhline{-~}
 		\multicolumn{1}{|l|}{\cellcolor{gray}}                              &                                       \\ [-3ex]
 		\multicolumn{1}{|l|}{\cellcolor{gray}}                              & \multirow{2}{*}{\texttt{BOOTTOP}}     \\ \cline{1-1}
 		\multicolumn{1}{|c|}{\multirow{2}{*}{Bootstrap BIOS Services}}      &                                       \\ [-1ex]
-		\multicolumn{1}{|c|}{}                                              & \multirow{2}{*}{\texttt{0x1FC0.0000}} \\ \cline{1-1}
+		\multicolumn{1}{|c|}{}                                              & \multirow{2}{*}{\texttt{0x1FC0.0000}} \\ \hhline{-~}
 		\multicolumn{1}{|l|}{\multirow{2}{*}{\cellcolor{gray}}}             &                                       \\ [-3ex]
 		\multicolumn{1}{|l|}{\cellcolor{gray}}                              & \multirow{2}{*}{\texttt{DEVTOP}}      \\ \cline{1-1}
 		\multicolumn{1}{|c|}{\multirow{2}{*}{Devices Registers Area}}       &                                       \\ [-1ex]
@@ -250,7 +251,7 @@ The first big area of the memory [\autoref{fig:kernel_reserved_space}] is reserv
 		\multicolumn{1}{|c|}{\multirow{2}{*}{Bus Register Area}}            &                                       \\ [-1ex]
 		\multicolumn{1}{|c|}{}                                              & \multirow{2}{*}{\texttt{0x1000.0000}} \\ \cline{1-1}
 		\multicolumn{1}{|c|}{\multirow{2}{*}{BIOS Data Page}}               &                                       \\ [-1ex]
-		\multicolumn{1}{|c|}{}                                              & \multirow{2}{*}{\texttt{0x0FFF.F000}} \\ \cline{1-1}
+		\multicolumn{1}{|c|}{}                                              & \multirow{2}{*}{\texttt{0x0FFF.F000}} \\ \hhline{-~}
 		\multicolumn{1}{|l|}{\multirow{2}{*}{\cellcolor{gray}}}             &                                       \\ [-3ex]
 		\multicolumn{1}{|l|}{\cellcolor{gray}}                              & \multirow{2}{*}{\texttt{EXECTOP}}     \\ \cline{1-1}
 		\multicolumn{1}{|c|}{\multirow{2}{*}{Execution BIOS Services}}      &                                       \\ [-1ex]
@@ -497,14 +498,14 @@ They remain unchanged from $\mu$MPS2, and explained in detail in \cite{pops}.
 	\begin{subfigure}[b]{0.4\textwidth}
 		\renewcommand{\arraystretch}{0.77}
 		\begin{tabular}{cl}
-			\multicolumn{1}{l}{}                                                  & \multirow{2}{*}{\texttt{0x1000.0000}} \\ \cline{1-1}
+			\multicolumn{1}{l}{}                                                  & \multirow{2}{*}{\texttt{0x1000.0000}} \\ \hhline{-~}
 			\multicolumn{1}{|l|}{\multirow{4}{*}{\cellcolor{gray}}}               &                                       \\ [-2ex]
 			\multicolumn{1}{|l|}{\cellcolor{gray}}                                &                                       \\
 			\multicolumn{1}{|l|}{\cellcolor{gray}}                                &                                       \\
 			\multicolumn{1}{|l|}{\cellcolor{gray}}                                & \multirow{2}{*}{\texttt{0x0FFF.FA00}} \\ \cline{1-1}
 			\multicolumn{1}{|c|}{\multirow{3}{*}{\begin{tabular}[c]{@{}c@{}}16$\times$ Pass Up\\ Vectors Area\end{tabular}}} &                                       \\
 			\multicolumn{1}{|c|}{}                                                &                                       \\
-			\multicolumn{1}{|c|}{}                                                & \multirow{2}{*}{\texttt{0x0FFF.F900}} \\ \cline{1-1}
+			\multicolumn{1}{|c|}{}                                                & \multirow{2}{*}{\texttt{0x0FFF.F900}} \\ \hhline{-~}
 			\multicolumn{1}{|c|}{\multirow{2}{*}{\cellcolor{gray}}}               &                                       \\ [-2ex]
 			\multicolumn{1}{|c|}{\cellcolor{gray}}                                & \multirow{2}{*}{\texttt{0x0FFF.F8C0}} \\ \cline{1-1}
 			\multicolumn{1}{|c|}{\multirow{4}{*}{\begin{tabular}[c]{@{}c@{}}16$\times$ Processors\\ States Area\end{tabular}}} &                                       \\
@@ -611,9 +612,9 @@ These four pair of areas, each one linked to its specific type of exception, wer
 	\begin{subfigure}[b]{0.4\textwidth}
 		\renewcommand{\arraystretch}{0.9}
 		\begin{tabular}{cl}
-			\multicolumn{1}{l}{}                                                  & \multirow{2}{*}{\texttt{0x2000.0FFF}} \\ \cline{1-1}
+			\multicolumn{1}{l}{}                                                  & \multirow{2}{*}{\texttt{0x2000.1000}} \\ \cline{1-1}
 			\multicolumn{1}{|c|}{\multirow{2}{*}{\begin{tabular}[c]{@{}c@{}}Reserved space for\\ the ROM Routines\end{tabular}}} &                                       \\
-			\multicolumn{1}{|c|}{}                                                & \multirow{2}{*}{\texttt{0x2000.0FF0}} \\ \cline{1-1}
+			\multicolumn{1}{|c|}{}                                                & \multirow{2}{*}{\texttt{0x2000.0FF0}} \\ \hhline{-~}
 			\multicolumn{1}{|c|}{\multirow{4}{*}{\cellcolor{gray}}}               &                                       \\ [3ex]
 			\multicolumn{1}{|c|}{\cellcolor{gray}}                                &                                       \\
 			\multicolumn{1}{|c|}{\cellcolor{gray}}                                &                                       \\
@@ -621,7 +622,7 @@ These four pair of areas, each one linked to its specific type of exception, wer
 			\multicolumn{1}{|c|}{\multirow{4}{*}{64 Segment Tables}}              &                                       \\ [-1ex]
 			\multicolumn{1}{|c|}{}                                                & \multirow{2}{*}{}                     \\
 			\multicolumn{1}{|c|}{}                                                &                                       \\
-			\multicolumn{1}{|c|}{}                                                & \multirow{2}{*}{\texttt{0x2000.0500}} \\ \cline{1-1}
+			\multicolumn{1}{|c|}{}                                                & \multirow{2}{*}{\texttt{0x2000.0500}} \\ \hhline{-~}
 			\multicolumn{1}{|c|}{\multirow{2}{*}{\cellcolor{gray}}}               &                                       \\ [-2ex]
 			\multicolumn{1}{|c|}{\cellcolor{gray}}                                & \multirow{2}{*}{\texttt{0x2000.0460}} \\ \cline{1-1}
 			\multicolumn{1}{|c|}{\multirow{4}{*}{Old/new areas}}                  &                                       \\
@@ -641,7 +642,7 @@ The ROM Reserved Frame was a 4KB (frame size) area at the beginning of the insta
 It was used, apart from storing the old/new states of the processor, also to contain other structures, as \autoref{fig:rom_reserved_frame_overview} shows:
 \begin{itemize}
 	\item a \textit{Segment Table}, from address \texttt{0x2000.0500} to \texttt{0x2000.0800}: a 64 (number of maximum concurrent processes) $\times$ 3 (number of $\mu$MPS2 segments) word area containing page table pointers [subsection 4.3.1 of \cite{old_pops}];
-	\item a \textit{Reserved Space}, from address \texttt{0x2000.0FF0} to \texttt{0x2000.0FFF}, dedicated to storing pointers to each old/new areas of the processors needed for the execution of the ROM (now called BIOS) exception handlers.
+	\item a \textit{Reserved Space}, from address \texttt{0x2000.0FF0} to \texttt{0x2000.1000}, dedicated to storing pointers to each old/new areas of the processors needed for the execution of the ROM (now called BIOS) exception handlers.
 \end{itemize}
 
 \section{Differences from $\mu$MPS2}
@@ -699,9 +700,9 @@ They are responsible for setting up the correct handling areas [\autoref{chap:bi
 \textit{BIOS Reserved 1} and \textit{BIOS Reserved 2} are used for this purpose.
 
 In $\mu$MPS2, for the first processor, the BIOS Reserved 1 register was set, by the Bootstrap BIOS Services, to point the beginning of the Old/New State Area [\autoref{fig:old_new_state_areas}], at address \texttt{0x2000.0000}.
-The BIOS Reserved 2 register was set to point the reserved space at the end of the first frame of RAM, at address \texttt{0x2000.0FFF}.
+The BIOS Reserved 2 register was set to point the reserved space at the end of the first frame of RAM, at address \texttt{0x2000.1000}.
 
-In $\mu$MPS3, at boot/reset time, the Bootstrap BIOS Services set up the BIOS Reserved 1 register to point the bottom of the BIOS Data Page (\texttt{0x0FFF.F000}) [\autoref{fig:bios_data_page}], where the reserved exception state space for processor 0 starts.
+In $\mu$MPS3, at boot/reset time, the Bootstrap BIOS Services set up the BIOS Reserved 1 register to point the bottom of the BIOS Data Page [\autoref{fig:bios_data_page}], at address \texttt{0x0FFF.F000}, where the reserved exception state space for processor 0 starts.
 On the other hand, BIOS Reserved 2 now points to the Pass Up Vector of processor 0, at address \texttt{0x0FFF.F900}.
 
 After that, the Bootstrap BIOS Services load the OS code.
