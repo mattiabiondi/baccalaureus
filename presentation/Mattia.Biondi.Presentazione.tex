@@ -9,6 +9,8 @@
 
 \beamertemplatenavigationsymbolsempty
 
+\graphicspath{ {./images/} }
+
 \definecolor{nord0}{HTML}{2E3440}
 \definecolor{nord1}{HTML}{3B4252}
 \definecolor{nord2}{HTML}{434C5E}
@@ -81,6 +83,7 @@ Corso di Laurea in Informatica}
 		\begin{minipage}{0.55\textwidth}
 			\begin{block}{\textbf{Where}}
 				\underline{Created}
+				\vspace{0.2em}
 				\begin{itemize}
 					\item University of Bologna
 					\item Xavier University
@@ -390,17 +393,185 @@ Corso di Laurea in Informatica}
 
 \begin{frame}
 	\frametitle{Processors Initialization \hspace{0pt plus 1 filll} \insertframenumber\,/\,\inserttotalframenumber}
+	\begin{center}
+		\setbeamercolor{block title}{bg=nord1,fg=nord13}
+		\setbeamercolor{itemize item}{fg=nord13}
+		\begin{block}{\textbf{{\small \textit{Processor Interface Registers}}}}
+			\begin{scriptsize}
+				Each processor has its own private instance of
+				\vspace{0.5em}
+				\begin{itemize}
+					\item \texttt{BIOS Reserved 1} \quad (address of the processor exception state area)
+					\item \texttt{BIOS Reserved 2} \quad (address of the processor Pass Up Vector)
+				\end{itemize}
+			\end{scriptsize}
+		\end{block}
+		\setbeamercolor{block title}{bg=nord1,fg=nord8}
+		\setbeamercolor{itemize item}{fg=nord8}
+		\begin{block}{\textbf{{\small Processor 0: \textit{Bootstrap BIOS Services}}}}
+			\begin{scriptsize}
+				\begin{itemize}
+					\item \texttt{BIOS Reserved 1 $\rightarrow$ 0x0FFF.F000}
+					\item \texttt{BIOS Reserved 2 $\rightarrow$ 0x0FFF.F900}
+				\end{itemize}
+			\end{scriptsize}
+		\end{block}
+		\setbeamercolor{block title}{bg=nord1,fg=nord14}
+		\setbeamercolor{itemize item}{fg=nord14}
+		\begin{block}{\textbf{{\small Processors 1-15: \textit{Library Services}}}}
+			\begin{scriptsize}
+				\begin{center}
+					\texttt{void INITCPU (uint32\_t cpuid, state\_t *start\_state);}
+				\end{center}
+				\begin{itemize}
+					\item \texttt{BIOS Reserved 1 $\rightarrow$ (cpuid $\times$ 35 words) + 0x0FFF.F000}
+					\item \texttt{BIOS Reserved 2 $\rightarrow$ (cpuid $\times$ ~4 words) + 0x0FFF.F900}
+				\end{itemize}
+			\end{scriptsize}
+		\end{block}
+	\end{center}
 \end{frame}
 
 \begin{frame}
-	\frametitle{Flash Device \hspace{0pt plus 1 filll} \insertframenumber\,/\,\inserttotalframenumber}
+	\frametitle{Flash Drive Device \hspace{0pt plus 1 filll} \insertframenumber\,/\,\inserttotalframenumber}
+	\begin{center}
+		\setbeamercolor{block title}{bg=nord1,fg=nord13}
+		\setbeamercolor{itemize item}{fg=nord13}
+		\begin{block}{\textbf{{\small Characteristics}}}
+			\begin{minipage}{0.6\textwidth}
+				\vspace{0.5em}
+				\begin{scriptsize}
+					\begin{itemize}
+						\item read/writable DMA device
+						\item single contiguous block addressable space
+						\item maximum size of 64GB
+						\item replaces tapes
+					\end{itemize}
+				\end{scriptsize}
+				\vspace{0.5em}
+			\end{minipage}
+			\hspace{0pt plus 1 filll}
+			\begin{minipage}{0.25\textwidth}
+				\begin{figure}[h]
+					\includegraphics[scale=4]{flash-22}
+				\end{figure}
+			\end{minipage}
+		\end{block}
+		\setbeamercolor{block title}{bg=nord1,fg=nord12}
+		\setbeamercolor{itemize item}{fg=nord12}
+		\begin{block}{\textbf{{\small Creation}}}
+			\begin{scriptsize}
+				\begin{center}
+					\texttt{\$ umps3-mkdev -f <flashfile>.umps <file> [blocks [wt]]}
+				\end{center}
+				\begin{itemize}
+					\item \texttt{<flashfile>} : flash device image file name
+					\item \texttt{<file>} : file to be written $\rightarrow$ \texttt{/dev/null} for an empty device
+					\item \texttt{blocks} : number of blocks
+					\item \texttt{wt} : average write time (microsecs.) $\rightarrow$ slower than disks by default
+				\end{itemize}
+			\end{scriptsize}
+		\end{block}
+	\end{center}
 \end{frame}
 
 \begin{frame}
-	\frametitle{Building Process \hspace{0pt plus 1 filll} \insertframenumber\,/\,\inserttotalframenumber}
+	\frametitle{Project Structure Update \hspace{0pt plus 1 filll} \insertframenumber\,/\,\inserttotalframenumber}
+	\begin{center}
+		\setbeamercolor{block title}{bg=nord1,fg=nord7}
+		\setbeamercolor{itemize item}{fg=nord7}
+		\begin{block}{\textbf{{\small Building Process}}}
+			\begin{footnotesize}
+				\underline{Migrated from Autotools to CMake}
+				\vspace{0.5em}
+				\begin{itemize}
+					\item simpler 2-step compilation $\rightarrow$ \texttt{\$ cmake \&\& make}
+					\item faster building time
+					\item lighter codebase $\rightarrow$ \textbf{-11339} physical source lines of code
+					\item easier to learn for novices
+					\item immediate integration with \textit{Qt5}
+				\end{itemize}
+			\end{footnotesize}
+		\end{block}
+		\setbeamercolor{block title}{bg=nord1,fg=nord13}
+		\setbeamercolor{itemize item}{fg=nord13}
+		\begin{block}{\textbf{{\small Graphical User Interface}}}
+			\begin{minipage}{0.55\textwidth}
+				\vspace{0.3em}
+				\begin{footnotesize}
+					\begin{itemize}
+						\item updated from \textit{Qt4} to \textit{Qt5}
+						\item replaced old icon theme
+						\item designed new logo with \textit{Inkscape}
+						\item various other GUI improvements
+					\end{itemize}
+				\end{footnotesize}
+			\end{minipage}
+			\hspace{0pt plus 1 filll}
+			\begin{minipage}{0.17\textwidth}
+				\begin{center}
+					\includegraphics[scale=1]{machine_start-22} $\rightarrow$ \includegraphics[scale=1, width=18px]{start-22}\\
+					{\footnotesize \texttt{Power ON}}
+				\end{center}
+			\end{minipage}
+			\hspace{0pt plus 1 filll}
+			\begin{minipage}{0.23\textwidth}
+				\begin{center}
+					\includegraphics[scale=1]{machine_halt-22} $\rightarrow$ \includegraphics[scale=1, width=18px]{halt-22}\\
+					{\footnotesize \texttt{Power OFF}}
+				\end{center}
+			\end{minipage}
+		\end{block}
+	\end{center}
 \end{frame}
 
 \begin{frame}
-	\frametitle{Graphical User Interface \hspace{0pt plus 1 filll} \insertframenumber\,/\,\inserttotalframenumber}
+	\frametitle{Conclusions \hspace{0pt plus 1 filll} \insertframenumber\,/\,\inserttotalframenumber}
+	\begin{center}
+		\setbeamercolor{block title}{bg=nord1,fg=nord11}
+		\setbeamercolor{itemize item}{fg=nord11}
+		\begin{block}{\textbf{{\small Debian}}}
+			\begin{footnotesize}
+				\begin{itemize}
+					\item soon available in official repositories
+				\end{itemize}
+			\end{footnotesize}
+		\end{block}
+		\setbeamercolor{block title}{bg=nord1,fg=nord8}
+		\setbeamercolor{itemize item}{fg=nord8}
+		\begin{block}{\textbf{{\small Arch Linux}}}
+			\begin{footnotesize}
+				\begin{itemize}
+					\item already available in the \textit{AUR} (Arch User Repository)
+				\end{itemize}
+			\end{footnotesize}
+		\end{block}
+		\begin{minipage}{0.6\textwidth}
+			\setbeamercolor{block title}{bg=nord1,fg=nord14}
+			\setbeamercolor{itemize item}{fg=nord14}
+			\begin{block}{\textbf{{\small Source Code}}}
+				\begin{footnotesize}
+					\begin{itemize}
+						\item \texttt{github.com/mattiabiondi/umps}
+					\end{itemize}
+				\end{footnotesize}
+			\end{block}
+			\setbeamercolor{block title}{bg=nord1,fg=nord13}
+			\setbeamercolor{itemize item}{fg=nord13}
+			\begin{block}{\textbf{{\small License}}}
+				\begin{footnotesize}
+					\begin{itemize}
+						\item updated from \textbf{GPL-2.0} to \textbf{GPL-3.0}
+					\end{itemize}
+				\end{footnotesize}
+			\end{block}
+		\end{minipage}
+		\hspace{0pt plus 1 filll}
+		\begin{minipage}{0.35\textwidth}
+			\begin{figure}[h]
+				\includegraphics[scale=1.5]{umps3}
+			\end{figure}
+		\end{minipage}
+	\end{center}
 \end{frame}
 \end{document}
