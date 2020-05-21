@@ -130,7 +130,7 @@ Corso di Laurea in Informatica}
 					\end{tabular}
 				\end{figure}
 				\begin{itemize}
-					{\small \item Memory segmentation}
+					{\small \item Segmentation}
 				\end{itemize}
 			\end{block}
 		\end{minipage}
@@ -167,7 +167,7 @@ Corso di Laurea in Informatica}
 					\end{tabular}
 				\end{figure}
 				\begin{itemize}
-					{\small \item Memory partitioning}
+					{\small \item Fixed partitions}
 				\end{itemize}
 			\end{block}
 		\end{minipage}
@@ -279,8 +279,8 @@ Corso di Laurea in Informatica}
 				\begin{scriptsize}
 					\begin{itemize}
 						\item space for just one processor state
-						\item page table (memory segmentation)
-						\item reentrant ROM (BIOS) handlers
+						\item segment table
+						\item space for multiprocessor purpose
 					\end{itemize}
 				\end{scriptsize}
 			\end{block}
@@ -295,7 +295,7 @@ Corso di Laurea in Informatica}
 					\renewcommand{\arraystretch}{0.5}
 					\begin{tabular}{rcl}
 						                                                                         &                                                                                                & \multirow{2}{*}{\texttt{{\tiny 0x2000.0000}}} \\ \hhline{--~}
-						\multicolumn{1}{l|}{\multirow{20}{*}{\rotatebox{90}{{\small~~~~~BIOS}}}} & \multicolumn{1}{c|}{\cellcolor{nord9}}                                                         &                                               \\
+						\multicolumn{1}{l|}{\multirow{20}{*}{\rotatebox{90}{{\small BIOS region}}}} & \multicolumn{1}{c|}{\cellcolor{nord9}}                                                         &                                               \\
 						\multicolumn{1}{l|}{}                                                    & \multicolumn{1}{c|}{\cellcolor{nord9}}                                                         &                                               \\
 						\multicolumn{1}{l|}{}                                                    & \multicolumn{1}{c|}{\cellcolor{nord9}}                                                         &                                               \\
 						\multicolumn{1}{l|}{}                                                    & \multicolumn{1}{c|}{\cellcolor{nord9}}                                                         &                                               \\
@@ -319,8 +319,8 @@ Corso di Laurea in Informatica}
 				\end{figure}
 				\begin{scriptsize}
 					\begin{itemize}
-						\item space for all 16 processors states
-						\item different BIOS handlers per CPU
+						\item space for 16$\times$ processors states
+						\item space for 16$\times$ Pass Up Vectors
 					\end{itemize}
 				\end{scriptsize}
 			\end{block}
@@ -552,7 +552,7 @@ Corso di Laurea in Informatica}
 			\begin{block}{\textbf{{\small Source Code}}}
 				\begin{footnotesize}
 					\begin{itemize}
-						\item \texttt{github.com/mattiabiondi/umps}
+						\item \texttt{github.com/virtualsquare/umps3}
 					\end{itemize}
 				\end{footnotesize}
 			\end{block}
